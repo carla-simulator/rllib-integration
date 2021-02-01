@@ -1,0 +1,38 @@
+# To see the complete list of configurable parameters see:
+# https://github.com/ray-project/ray/blob/master/rllib/agents/trainer.py
+"framework": "torch"
+"num_workers": 1
+"num_gpus_per_worker": 1
+"num_cpus_per_worker": 20
+"batch_mode": "complete_episodes"
+"rollout_fragment_length": 4
+"horizon": 6400
+"timesteps_per_iteration": 10000
+"train_batch_size": 32
+"learning_starts": 0
+"buffer_size": 5000
+"lr": 0.005
+"exploration_config": {
+  "type": "EpsilonGreedy",
+  "initial_epsilon": 1.0,
+  "final_epsilon": 0.02,
+  "epsilon_timesteps": 2500000
+}
+"model": {
+  "dim": 300,
+  "conv_filters": [
+    [ 16, [ 5, 5 ], 4 ],
+    [ 32, [ 5, 5 ], 2 ],
+    [ 32, [ 5, 5 ], 2 ],
+    [ 64, [ 5, 5 ], 1 ],
+    [ 64, [ 5, 5 ], 2 ],
+    [ 128, [ 5, 5 ], 2 ],
+    [ 512, [ 5, 5 ], 1 ],
+  ]
+}
+
+env_config:
+  RAY: True
+  DEBUG_MODE: False
+  experiment_config:
+    key: value
