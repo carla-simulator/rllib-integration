@@ -21,13 +21,13 @@ from rllib_integration.helper.sensors_manager import *
 from rllib_integration.helper.list_procs import search_procs_by_name
 
 
-CORE_CONFIG = {
+BASE_CORE_CONFIG = {
     "RAY_DELAY": 1,  # Delay between 0 & RAY_DELAY before starting server so not all servers are launched simultaneously
-    "RETRIES_ON_ERROR": 30,
+    "retries_on_erro": 30,
     "timeout": 60.0,
     "host": "localhost",
     "map_buffer": 1.2,  # To find the minimum and maximum coordinates of the map
-               }
+}
 
 
 def is_used(port):
@@ -35,16 +35,14 @@ def is_used(port):
 
 
 class CarlaCore:
-    def __init__(self, environment_config, experiment_config, core_config=None):
+    def __init__(self, environment_config, experiment_config, core_config={}):
         """
         Initialize the server, clients, hero and sensors
         :param environment_config: Environment Configuration
         :param experiment_config: Experiment Configuration
         """
-        if core_config is None:
-            core_config = CORE_CONFIG
-
-        self.core_config = core_config
+        self.core_config = BASE_CORE_CONFIG.copy()
+        self.core_config.update(core_config)
         self.environment_config = environment_config
         self.experiment_config = experiment_config
 
@@ -54,7 +52,7 @@ class CarlaCore:
             self.core_config["host"],
             self.server_port,
             self.core_config["timeout"],
-            self.core_config["RETRIES_ON_ERROR"],
+            self.core_config["retries_on_error"],
             self.experiment_config["Disable_Rendering_Mode"],
             True,
             self.experiment_config["Weather"],
@@ -122,11 +120,10 @@ class CarlaCore:
         server_command = [
             "{}/CarlaUE4.sh".format(os.environ["CARLA_ROOT"]),
             "-windowed",
-            "-ResX=84",
-            "-ResY=84",
+            "-ResX={}".format(self.core_config["resolution_x"]),
+            "-ResY={}".format(self.core_config["resolution_y"]),
             "--carla-rpc-port={}".format(self.server_port),
-            "-quality-level =",
-            self.experiment_config["quality_level"],
+            "-quality-level={}".format(self.core_config["quality_level"]),
             "--no-rendering",
         ]
 
@@ -142,9 +139,7 @@ class CarlaCore:
     # ==============================================================================
     # -- ClientSetup -----------------------------------------------------------
     # ==============================================================================
-
-    @staticmethod
-    def __connect_client(host, port, timeout, num_retries, disable_rendering_mode, sync_mode, weather, town):
+    def __connect_client(self, host, port, timeout, num_retries, disable_rendering_mode, sync_mode, weather, town):
         """
         Connect the client
 
@@ -163,7 +158,10 @@ class CarlaCore:
             try:
                 carla_client = carla.Client(host, port)
                 carla_client.set_timeout(timeout)
-                carla_client.load_world(map_name = town, map_layers = carla.MapLayer.NONE)
+                carla_client.load_world(
+                    map_name=town,
+                    map_layers=carla.MapLayer.NONE if self.core_config["subleveling"] else carla.MapLayer.All
+                )
 
                 world = carla_client.get_world()
 
@@ -175,7 +173,7 @@ class CarlaCore:
                 settings = world.get_settings()
                 settings.no_rendering_mode = disable_rendering_mode
                 settings.synchronous_mode = sync_mode
-                settings.fixed_delta_seconds = 0.1
+                settings.fixed_delta_seconds = self.core_config["timestep"]
 
                 world.apply_settings(settings)
 

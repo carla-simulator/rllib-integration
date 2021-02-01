@@ -366,4 +366,3 @@ class BaseExperiment(object):
         self.t_ep += 1
         self.update_measurements(core)
         self.update_actions(action, self.hero)
-

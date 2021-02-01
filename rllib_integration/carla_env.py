@@ -20,15 +20,14 @@ from rllib_integration.carla_core import CarlaCore
 class CarlaEnv(gym.Env):
 
     def __init__(self, config):
-
-        self.environment_config = config
-        self.experiment = self.environment_config["experiment_config"]["type"]()
+        self.config = config
+        self.experiment = self.config["experiment"]["type"]()
 
         self.action_space = self.experiment.get_action_space()
         self.observation_space = self.experiment.get_observation_space()
         self.experiment_config = self.experiment.get_experiment_config()
 
-        self.core = CarlaCore(self.environment_config, self.experiment_config)
+        self.core = CarlaCore(self.config, self.experiment_config, self.config["carla"])
 
         self.world = self.core.get_core_world()
         CarlaCore.spawn_npcs(self.core, self.experiment_config["n_vehicles"],self.experiment_config["n_walkers"], hybrid = True)

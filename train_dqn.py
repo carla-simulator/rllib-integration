@@ -77,7 +77,7 @@ def run(args):
         with open(args.configuration_file) as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
             config["env"] = CarlaEnv
-            config["env_config"]["experiment_config"]["type"] = DQNExperiment
+            config["env_config"]["experiment"]["type"] = DQNExperiment
 
         while True:
             kill_server()

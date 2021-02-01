@@ -32,7 +32,19 @@
 }
 
 env_config:
+  carla:
+    host: "localhost"
+    timeout: 10.0
+    timestep: 0.05
+    retries_on_error: 25
+    resolution_x: 120
+    resolution_y: 120
+    quality_level: "Epic"
+    subleveling: False
+    no_rendering: True
+
   RAY: True
   DEBUG_MODE: False
-  experiment_config:
-    key: value
+
+  experiment:
+    key: "value"
