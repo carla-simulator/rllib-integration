@@ -689,7 +689,10 @@ class BirdviewManager(object):
                 if not self.synchronous_mode:
                     self.birdview_data = self.sensor.get_data()
                 else:
-                    self.birdview_data.put(self.sensor.get_data())
+                    
+                    
+                    #self.birdview_data.put(self.sensor.get_data())
+                    self.callback(self.sensor.get_data())
 
                 # Update the previous frame
                 self.previous_frame = frame

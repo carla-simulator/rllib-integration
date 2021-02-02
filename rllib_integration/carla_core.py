@@ -18,6 +18,9 @@ from rllib_integration.sensors.camera_manager import CameraManager
 from rllib_integration.sensors.bird_view_manager import BirdviewManager
 from rllib_integration.sensors.sensors_manager import *
 
+from rllib_integration.sensors.sensor_interface import SensorInterface
+from rllib_integration.sensors.factory import SensorFactory
+
 
 BASE_CORE_CONFIG = {
     "RAY_DELAY": 1,  # Delay between 0 & RAY_DELAY before starting server so not all servers are launched simultaneously
@@ -58,13 +61,15 @@ class CarlaCore:
         )
 
         self.set_map_dimensions()
-        self.camera_manager = None
-        self.collision_sensor = None
-        self.radar_sensor = None
-        self.imu_sensor = None
-        self.gnss_sensor = None
-        self.lane_sensor = None
-        self.birdview_sensor = None
+
+        self.sensor_interface = SensorInterface()
+        # self.camera_manager = None
+        # self.collision_sensor = None
+        # self.radar_sensor = None
+        # self.imu_sensor = None
+        # self.gnss_sensor = None
+        # self.lane_sensor = None
+        # self.birdview_sensor = None
 
         # Spawn traffic
         self.spawn_npcs(
@@ -262,7 +267,7 @@ class CarlaCore:
     # -- SensorSetup -----------------------------------------------------------
     # ==============================================================================
 
-    def setup_sensors(self, experiment_config, hero, synchronous_mode=True):
+    def setup_sensors(self,sensor_config, hero, sync_mode):
         """
         This function sets up hero vehicle sensors
 
@@ -271,148 +276,19 @@ class CarlaCore:
         :param synchronous_mode: set to True for RL
         :return:
         """
-        for i in range(0,len(experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"])):
-            if experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"][i]:
-                self.camera_manager = CameraManager(
-                    hero,
-                    experiment_config["SENSOR_CONFIG"]["CAMERA_X"],
-                    experiment_config["SENSOR_CONFIG"]["CAMERA_Y"],
-                    experiment_config["SENSOR_CONFIG"]["CAMERA_FOV"],
-                )
-                sensor = experiment_config["SENSOR_CONFIG"]["SENSOR"][i].value
-                transform_index = experiment_config["SENSOR_CONFIG"]["SENSOR_TRANSFORM"][i].value
-                self.camera_manager.set_sensor(sensor, transform_index, synchronous_mode=synchronous_mode)
+        for name, attributes in sensor_config.items():
+            sensor = SensorFactory.spawn(name, attributes, self.sensor_interface, hero)
+        return self.sensor_interface.sensors
 
-        if experiment_config["OBSERVATION_CONFIG"]["COLLISION_OBSERVATION"]:
-            self.collision_sensor = CollisionSensor(
-                hero, synchronous_mode=False
-            )
-        if experiment_config["OBSERVATION_CONFIG"]["RADAR_OBSERVATION"]:
-            self.radar_sensor = RadarSensor(
-                hero, synchronous_mode=synchronous_mode
-            )
-        if experiment_config["OBSERVATION_CONFIG"]["IMU_OBSERVATION"]:
-            self.imu_sensor = IMUSensor(
-                hero, synchronous_mode=synchronous_mode
-            )
-        if experiment_config["OBSERVATION_CONFIG"]["LANE_OBSERVATION"]:
-            self.lane_sensor = LaneInvasionSensor(
-                hero, synchronous_mode=synchronous_mode
-            )
-        if experiment_config["OBSERVATION_CONFIG"]["GNSS_OBSERVATION"]:
-            self.gnss_sensor = GnssSensor(
-                hero, synchronous_mode=synchronous_mode
-            )
-        if experiment_config["OBSERVATION_CONFIG"]["BIRDVIEW_OBSERVATION"]:
-            size = experiment_config["BIRDVIEW_CONFIG"]["SIZE"]
-            radius = experiment_config["BIRDVIEW_CONFIG"]["RADIUS"]
-            self.birdview_sensor = BirdviewManager(
-                self.world, size, radius, hero, synchronous_mode=synchronous_mode
-            )
-
-    def reset_sensors(self, experiment_config):
+    def reset_sensors(self, sensor_config):
         """
         Destroys sensors that were setup in this class
         :param experiment_config: sensors configured in the experiment
         :return:
         """
-        if experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"]:
-            if self.camera_manager is not None:
-                self.camera_manager.destroy_sensor()
-        if experiment_config["OBSERVATION_CONFIG"]["COLLISION_OBSERVATION"]:
-            if self.collision_sensor is not None:
-                self.collision_sensor.destroy_sensor()
-        if experiment_config["OBSERVATION_CONFIG"]["RADAR_OBSERVATION"]:
-            if self.radar_sensor is not None:
-                self.radar_sensor.destroy_sensor()
-        if experiment_config["OBSERVATION_CONFIG"]["IMU_OBSERVATION"]:
-            if self.imu_sensor is not None:
-                self.imu_sensor.destroy_sensor()
-        if experiment_config["OBSERVATION_CONFIG"]["LANE_OBSERVATION"]:
-            if self.lane_sensor is not None:
-                self.lane_sensor.destroy_sensor()
-        if experiment_config["OBSERVATION_CONFIG"]["GNSS_OBSERVATION"]:
-            if self.gnss_sensor is not None:
-                self.gnss_sensor.destroy_sensor()
-        if experiment_config["OBSERVATION_CONFIG"]["BIRDVIEW_OBSERVATION"]:
-            if self.birdview_sensor is not None:
-                self.birdview_sensor.destroy_sensor()
-
-    # ==============================================================================
-    # -- CameraSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def record_camera(self, record_state):
-        self.camera_manager.set_recording(record_state)
-
-    def render_camera_lidar(self, render_state):
-        self.camera_manager.set_rendering(render_state)
-
-    def update_camera(self):
-        self.camera_manager.read_image_queue()
-
-    def get_camera_data(self):
-        return self.camera_manager.get_camera_data()
-
-    # ==============================================================================
-    # -- CollisionSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def update_collision(self):
-        self.collision_sensor.read_collision_queue()
-
-    def get_collision_data(self):
-        return self.collision_sensor.get_collision_data()
-
-    # ==============================================================================
-    # -- LaneInvasionSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def update_lane_invasion(self):
-        self.lane_sensor.read_lane_queue()
-
-    def get_lane_data(self):
-        return self.lane_sensor.get_lane_data()
-
-    # ==============================================================================
-    # -- GNSSSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def update_gnss(self):
-        self.gnss_sensor.read_gnss_queue()
-
-    def get_gnss_data(self):
-        return self.gnss_sensor.get_gnss_data()
-
-    # ==============================================================================
-    # -- IMUSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def update_imu_invasion(self):
-        self.imu_sensor.read_imu_queue()
-
-    def get_imu_data(self):
-        return self.imu_sensor.get_imu_data()
-
-    # ==============================================================================
-    # -- RadarSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def update_radar_invasion(self):
-        self.radar_sensor.read_radar_queue()
-
-    def get_radar_data(self):
-        return self.radar_sensor.get_radar_data()
-
-    # ==============================================================================
-    # -- BirdViewSensor -----------------------------------------------------------
-    # ==============================================================================
-
-    def update_birdview(self):
-        self.birdview_sensor.read_birdview_queue()
-
-    def get_birdview_data(self):
-        return self.birdview_sensor.get_birdview_data()
+        print("Vamos a destruir los siguientes sensors: {}".format(self.sensor_interface.sensors))
+        for sensor in self.sensor_interface.sensors.values():
+            sensor.destroy()
 
     # ==============================================================================
     # -- OtherForNow -----------------------------------------------------------

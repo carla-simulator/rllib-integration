@@ -35,26 +35,25 @@ class CarlaEnv(gym.Env):
         self.reset()
 
     def reset(self):
-        self.core.reset_sensors(self.experiment_config)
+        self.core.reset_sensors(self.experiment_config["sensors"])
 
         self.experiment.spawn_hero(self.world, self.experiment.start_location, autopilot=False)
 
         self.core.setup_sensors(
-            self.experiment.experiment_config,
+            self.experiment.experiment_config["sensors"],
             self.experiment.get_hero(),
             self.world.get_settings().synchronous_mode,
         )
 
         self.experiment.initialize_reward(self.core)
         self.experiment.set_server_view(self.core)
-        self.experiment.experiment_tick(self.core, self.world, action=None)
+        self.experiment.tick(self.core, self.world, action=None)
         obs, info = self.experiment.get_observation(self.core)
         obs = self.experiment.process_observation(self.core, obs)
         return obs
 
     def step(self, action):
-        self.experiment.experiment_tick(self.core, self.world, action)
-
+        self.experiment.tick(self.core, self.world, action)
         observation, info = self.experiment.get_observation(self.core)
         observation = self.experiment.process_observation(self.core, observation)
         reward = self.experiment.compute_reward(self.core,observation, self.map, self.world)

@@ -1,6 +1,7 @@
 # To see the complete list of configurable parameters see:
 # https://github.com/ray-project/ray/blob/master/rllib/agents/trainer.py
 "framework": "torch"
+"horizon": 1000
 "num_workers": 1
 "num_gpus_per_worker": 1
 "num_cpus_per_worker": 20
@@ -35,11 +36,11 @@ env_config:
   carla:
     host: "localhost"
     timeout: 10.0
-    timestep: 0.05
+    timestep: 0.1
     retries_on_error: 25
     resolution_x: 600
     resolution_y: 600
-    quality_level: "Epic"
+    quality_level: "Low"
     subleveling: False
     no_rendering: True
 
@@ -49,5 +50,16 @@ env_config:
   experiment:
     hero_blueprint: "vehicle.lincoln.mkz2017"
     town: "Town01_Opt"
-    n_vehicles: 50
-    n_walkers: 10
+    n_vehicles: 0
+    n_walkers: 0
+    sensors:
+      birdview:
+        type: "sensor.camera.rgb"
+        transform: "0,0,0,0,0,0"
+        fov: 100
+        image_size_x: 300
+        image_size_y: 300
+      collision:
+        type: "sensor.other.collision"
+      lidar:
+        type: "sensor.lidar.ray_cast"
