@@ -14,6 +14,7 @@ import argparse
 import json
 import logging
 import os
+import yaml
 
 import ray
 from ray.rllib.agents.dqn import DQNTrainer
@@ -21,17 +22,22 @@ from ray.rllib.agents.dqn import DQNTrainer
 from rllib_integration.carla_env import CarlaEnv
 from rllib_integration.carla_core import CarlaCore
 
+from dqn_example.experiment import DQNExperiment
+
 
 def main(args):
     # Load configuration from file params.json
     config_dir = os.path.dirname(args.checkpoint)
     config_path = os.path.join(config_dir, "..", "params.json")
-    with open(config_path) as f:
-        config = json.load(f)
-        del config["num_cpus_per_worker"]
-        del config["num_gpus_per_worker"]
+
+    with open(args.configuration_file) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+        config["env"] = CarlaEnv
+        config["env_config"]["experiment"]["type"] = DQNExperiment
         config["num_workers"] = 0
         config["explore"] = False
+        del config["num_cpus_per_worker"]
+        del config["num_gpus_per_worker"]
 
     # Restore agent
     agent = DQNTrainer(env=CarlaEnv, config=config)
@@ -53,6 +59,8 @@ def main(args):
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
+    argparser.add_argument("configuration_file",
+                           help="Configuration file (*.yaml)")
     argparser.add_argument(
         "checkpoint",
         type=str,
