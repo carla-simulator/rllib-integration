@@ -21,8 +21,8 @@ class CarlaEnv(gym.Env):
 
     def __init__(self, config):
         self.config = config
-        self.experiment = self.config["experiment"]["type"](self.config["experiment"])
 
+        self.experiment = self.config["experiment"]["type"](self.config["experiment"])
         self.action_space = self.experiment.get_action_space()
         self.observation_space = self.experiment.get_observation_space()
         self.experiment_config = self.experiment.get_experiment_config()
@@ -30,7 +30,6 @@ class CarlaEnv(gym.Env):
         self.core = CarlaCore(self.config, self.experiment_config, self.config["carla"])
 
         self.world = self.core.get_core_world()
-        CarlaCore.spawn_npcs(self.core, self.experiment_config["n_vehicles"],self.experiment_config["n_walkers"], hybrid = True)
         self.map = self.world.get_map()
 
         self.reset()

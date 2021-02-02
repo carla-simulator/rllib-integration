@@ -66,6 +66,13 @@ class CarlaCore:
         self.lane_sensor = None
         self.birdview_sensor = None
 
+        # Spawn traffic
+        self.spawn_npcs(
+            self.experiment_config["n_vehicles"],
+            self.experiment_config["n_walkers"],
+            hybrid = True
+        )
+
     # ==============================================================================
     # -- ServerSetup -----------------------------------------------------------
     # ==============================================================================

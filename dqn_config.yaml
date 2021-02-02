@@ -48,6 +48,6 @@ env_config:
 
   experiment:
     hero_blueprint: "vehicle.lincoln.mkz2017"
-    town: "Town05_Opt"
-    n_vehicles: 0
-    n_walkers: 0
+    town: "Town01_Opt"
+    n_vehicles: 50
+    n_walkers: 10
