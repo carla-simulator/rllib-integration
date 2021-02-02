@@ -24,7 +24,7 @@ from ray.rllib.agents.dqn import DQNTrainer
 import torch
 
 from rllib_integration.carla_env import CarlaEnv
-from rllib_integration.helper.carla_helper import kill_server
+from rllib_integration.carla_core import CarlaCore
 
 from dqn_example.experiment import DQNExperiment
 
@@ -80,7 +80,7 @@ def run(args):
             config["env_config"]["experiment"]["type"] = DQNExperiment
 
         while True:
-            kill_server()
+            CarlaCore.kill_all_servers()
             ray.init()
             tune.run(
                 CustomDQNTrainer,
@@ -96,7 +96,7 @@ def run(args):
             checkpoint = find_latest_checkpoint(args)
 
     finally:
-        kill_server()
+        CarlaCore.kill_all_servers()
         ray.shutdown()
 
 

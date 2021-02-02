@@ -18,7 +18,6 @@ from rllib_integration.helper.camera_manager import CameraManager
 from rllib_integration.helper.bird_view_manager import BirdviewManager
 from rllib_integration.helper.carla_debug import get_actor_display_name
 from rllib_integration.helper.sensors_manager import *
-from rllib_integration.helper.list_procs import search_procs_by_name
 
 
 BASE_CORE_CONFIG = {
@@ -135,6 +134,16 @@ class CarlaCore:
             preexec_fn=os.setsid,
             stdout=open(os.devnull, "w"),
         )
+
+    @staticmethod
+    def kill_all_servers():
+        """
+        Kill all PIDs that start with Carla. Do this if you running a single server
+        :return:
+        """
+        processes = [p for p in psutil.process_iter() if "carla" in p.name().lower()]
+        for process in processes:
+            os.kill(process.pid, signal.SIGKILL)
 
     # ==============================================================================
     # -- ClientSetup -----------------------------------------------------------
