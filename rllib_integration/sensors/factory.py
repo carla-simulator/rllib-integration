@@ -34,7 +34,7 @@ class SensorFactory(object):
         elif type_ == "sensor.other.gnss":
             sensor = Gnss(name, attributes, interface, parent)
         elif type_ == "sensor.other.imu":
-            sensor == Imu(name, attributes, interface, parent)
+            sensor = Imu(name, attributes, interface, parent)
         elif type_ == "sensor.other.lane_invasion":
             sensor = LaneInvasion(name, attributes, interface, parent)
         elif type_ == "sensor.other.collision":
