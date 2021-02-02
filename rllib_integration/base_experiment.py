@@ -75,13 +75,13 @@ BASE_EXPERIMENT_CONFIG = {
     "Server_View": BASE_SERVER_VIEW_CONFIG,
     "SENSOR_CONFIG": BASE_SENSOR_CONFIG,
     "BIRDVIEW_CONFIG": BASE_BIRDVIEW_CONFIG,
-    "server_map": "Town02_Opt",
+    "town": "Town02_Opt",
     "quality_level": "Low",  # options are low or Epic #ToDO. This does not do anything + change to enum
     "Disable_Rendering_Mode": False,  # If you disable, you will not get camera images
     "n_vehicles": 0,
     "n_walkers": 0,
     "end_pos_spawn_id": 45,  # 34,
-    "hero_vehicle_model": "vehicle.lincoln.mkz2017",
+    "hero_blueprint": "vehicle.lincoln.mkz2017",
     "Weather": carla.WeatherParameters.ClearNoon,
     "DISCRETE_ACTION": True,
     "Debug": False,
@@ -107,8 +107,9 @@ DISCRETE_ACTIONS = DISCRETE_ACTIONS_SMALL
 
 
 class BaseExperiment(object):
-    def __init__(self, config=BASE_EXPERIMENT_CONFIG):
-        self.experiment_config = config
+    def __init__(self, user_config):
+        self.experiment_config = BASE_EXPERIMENT_CONFIG.copy()
+        self.experiment_config.update(user_config)
         self.observation = {}
         self.observation["camera"] = []
         self.observation_space = None
@@ -122,7 +123,7 @@ class BaseExperiment(object):
         self.start_location = None
         self.end_location = None
         self.current_w = None
-        self.hero_model = ''.join(self.experiment_config["hero_vehicle_model"])
+        self.hero_model = ''.join(self.experiment_config["hero_blueprint"])
         self.set_observation_space()
         self.set_action_space()
         self.max_idle = 600 # ticks

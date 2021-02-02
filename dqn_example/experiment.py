@@ -14,7 +14,7 @@ from gym.spaces import Box
 import carla
 
 from rllib_integration.base_experiment import *
-from rllib_integration.helper.carla_helper import spawn_vehicle_at, post_process_image, update_config
+from rllib_integration.helper.carla_helper import spawn_vehicle_at, post_process_image
 
 from PIL import Image
 
@@ -22,6 +22,7 @@ SERVER_VIEW_CONFIG = {
 }
 
 SENSOR_CONFIG = {
+    "SENSOR": [],
     "CAMERA_NORMALIZED": [True], # apparently doesnt work if set to false, its just for the image!
     "CAMERA_GRAYSCALE": [True],
     "FRAMESTACK": 4,
@@ -35,6 +36,12 @@ BIRDVIEW_CONFIG = {
 
 OBSERVATION_CONFIG = {
     "CAMERA_OBSERVATION": [False],
+    "COLLISION_OBSERVATION": True,
+    "LOCATION_OBSERVATION": True,
+    "RADAR_OBSERVATION": False,
+    "IMU_OBSERVATION": False,
+    "LANE_OBSERVATION": True,
+    "GNSS_OBSERVATION": False,
     "BIRDVIEW_OBSERVATION": True,
 }
 
@@ -42,17 +49,19 @@ EXPERIMENT_CONFIG = {
     "OBSERVATION_CONFIG": OBSERVATION_CONFIG,
     "Server_View": SERVER_VIEW_CONFIG,
     "SENSOR_CONFIG": SENSOR_CONFIG,
-    "server_map": "Town02_Opt",
+    "town": "Town02_Opt",
     "BIRDVIEW_CONFIG": BIRDVIEW_CONFIG,
     "n_vehicles": 0,
     "n_walkers": 0,
-    "hero_vehicle_model": "vehicle.lincoln.mkz2017",
+    "hero_blueprint": "vehicle.lincoln.mkz2017",
 }
 
 
 class DQNExperiment(BaseExperiment):
-    def __init__(self):
-        config=update_config(BASE_EXPERIMENT_CONFIG, EXPERIMENT_CONFIG)
+    def __init__(self, user_config={}):
+        config = EXPERIMENT_CONFIG.copy()
+        config.update(user_config)
+
         super().__init__(config)
 
     def initialize_reward(self, core):

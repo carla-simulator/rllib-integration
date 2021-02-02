@@ -37,8 +37,8 @@ env_config:
     timeout: 10.0
     timestep: 0.05
     retries_on_error: 25
-    resolution_x: 120
-    resolution_y: 120
+    resolution_x: 600
+    resolution_y: 600
     quality_level: "Epic"
     subleveling: False
     no_rendering: True
@@ -47,4 +47,7 @@ env_config:
   DEBUG_MODE: False
 
   experiment:
-    key: "value"
+    hero_blueprint: "vehicle.lincoln.mkz2017"
+    town: "Town05_Opt"
+    n_vehicles: 0
+    n_walkers: 0

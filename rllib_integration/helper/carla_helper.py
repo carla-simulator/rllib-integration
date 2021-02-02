@@ -18,15 +18,6 @@ import signal
 import collections
 
 
-def update_config(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            d[k] = update_config(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
-
-
 def get_parent_dir(directory):
     return os.path.dirname(directory)
 

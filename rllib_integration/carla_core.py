@@ -56,7 +56,7 @@ class CarlaCore:
             self.experiment_config["Disable_Rendering_Mode"],
             True,
             self.experiment_config["Weather"],
-            self.experiment_config["server_map"]
+            self.experiment_config["town"]
         )
 
         self.set_map_dimensions()
