@@ -16,7 +16,6 @@ import logging
 
 from rllib_integration.sensors.camera_manager import CameraManager
 from rllib_integration.sensors.bird_view_manager import BirdviewManager
-from rllib_integration.sensors.carla_debug import get_actor_display_name
 from rllib_integration.sensors.sensors_manager import *
 
 
@@ -436,7 +435,7 @@ class CarlaCore:
                     )
                     vehicle = {}
                     if distance < max_distance:
-                        vehicle["vehicle_type"] = get_actor_display_name(x, truncate=22)
+                        vehicle["vehicle_type"] = x.type_id
                         vehicle["vehicle_location"] = x.get_location()
                         vehicle["vehicle_velocity"] = x.get_velocity()
                         vehicle["vehicle_distance"] = distance
