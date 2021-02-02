@@ -36,12 +36,12 @@ env_config:
   carla:
     host: "localhost"
     timeout: 10.0
-    timestep: 0.1
+    timestep: 0.05
     retries_on_error: 25
     resolution_x: 600
     resolution_y: 600
     quality_level: "Low"
-    subleveling: False
+    subleveling: True
     no_rendering: True
 
   RAY: True
@@ -53,13 +53,11 @@ env_config:
     n_vehicles: 0
     n_walkers: 0
     sensors:
-      birdview:
-        type: "sensor.camera.rgb"
-        transform: "0,0,0,0,0,0"
-        fov: 100
-        image_size_x: 300
-        image_size_y: 300
       collision:
         type: "sensor.other.collision"
       lidar:
         type: "sensor.lidar.ray_cast"
+      birdview:
+        type: "sensor.birdview"
+        size: 300
+        radius: 15

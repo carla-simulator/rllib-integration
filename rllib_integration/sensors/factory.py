@@ -7,6 +7,7 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 from rllib_integration.sensors.sensor import *
+from rllib_integration.sensors.bird_view_manager import BirdviewManager
 
 class SensorFactory(object):
 
@@ -23,12 +24,10 @@ class SensorFactory(object):
             sensor = CameraSemanticSegmentation(name, attributes, interface, parent)
         elif type_ == "sensor.camera.dvs":
             sensor = CameraDVS(name, attributes, interface, parent)
-        
         elif type_ == "sensor.lidar.ray_cast":
             sensor = Lidar(name, attributes, interface, parent)
         elif type_ == "sensor.lidar.ray_cast_semantic":
             sensor = SemanticLidar(name, attributes, interface, parent)
-
         elif type_ == "sensor.other.radar":
             sensor = Radar(name, attributes, interface, parent)
         elif type_ == "sensor.other.gnss":
@@ -39,11 +38,8 @@ class SensorFactory(object):
             sensor = LaneInvasion(name, attributes, interface, parent)
         elif type_ == "sensor.other.collision":
             sensor = Collision(name, attributes, interface, parent)
-
-        # TODO!!!
-        # elif type_ == "sensor.pseudo.bird_view":
-        #     sensor = sensor.bird_view(name, attributes, interface, parent)
-
+        elif type_ == "sensor.birdview":
+            sensor = BirdviewManager(name, attributes, interface, parent)
         else:
             raise RuntimeError("Sensor of type {} not supported".format(type_))
 

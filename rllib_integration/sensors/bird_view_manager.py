@@ -10,13 +10,13 @@ import glob
 import os
 import hashlib
 import math
-from threading import Thread
+import pygame
 import time
-import queue
+from threading import Thread
 
 import carla
 
-import pygame
+from rllib_integration.sensors.sensor import BaseSensor
 
 
 # ==============================================================================
@@ -72,7 +72,6 @@ COLOR_PURPLE = pygame.Color(186, 85, 211)
 # ==============================================================================
 # -- MapImage ------------------------------------------------------------------
 # ==============================================================================
-
 
 class MapImage(object):
     """
@@ -448,6 +447,7 @@ class MapImage(object):
         """Converts the world units to pixel units"""
         return int(self._pixels_per_meter * width)
 
+
 # ==============================================================================
 # -- BirdviewSensor ---------------------------------------------------------------------
 # ==============================================================================
@@ -456,6 +456,8 @@ class BirdviewSensor(object):
     """Class that contains all the information of the carla world (in the form of pygame surfaces)"""
 
     def __init__(self, world, size, radius, hero):
+        pygame.init()
+
         self.world = world
         self.town_map = self.world.get_map()
         self.radius = radius
@@ -651,65 +653,43 @@ def threaded(fn):
         return thread
     return wrapper
 
-class BirdviewManager(object):
+class BirdviewManager(BaseSensor):
     """
     This class is responsible of creating a 'birdview' pseudo-sensor, which is a simplified
     version of CARLA's non rendering mode.
     """
 
-    def __init__(self, world, size, radius, parent_actor, synchronous_mode=True, timeout=2.0):
-        pygame.init()
-        self.world = world
-        self.synchronous_mode = synchronous_mode
-        self.timeout = timeout
-        self.running = False  # Flag to stop the execution of the sensor
+    def __init__(self, name, attributes, interface, parent):
+        super().__init__(name, attributes, interface, parent)
 
-        # Data given by the sensor
-        if not self.synchronous_mode:
-            self.birdview_data = None
-        else:
-            # The queue erases the previous value, so the simulation has to wait for the next one to be ready
-            self.birdview_data = queue.Queue()
+        self.world = parent.get_world()
+        self.running = False  # Flag to stop the execution of the sensor
+        self.previous_frame = None
 
         # Get the sensor instance and run it
-        self.sensor = BirdviewSensor(world, size, radius, parent_actor)
+        self.sensor = BirdviewSensor(self.world, attributes["size"], attributes["radius"] , parent)
         self.run()
 
     @threaded
     def run(self):
+        """Function to copy the functionality of CARLA sensor.listen() callback,
+        responsible of sending the data of the sensor each tick"""
         self.running = True
-        self.previous_frame = None
-
         while self.running:
             frame = self.world.get_snapshot().frame
 
             # Avoid getting the data more than once per frame
             if self.previous_frame is None or frame > self.previous_frame:
-
-                if not self.synchronous_mode:
-                    self.birdview_data = self.sensor.get_data()
-                else:
-                    
-                    
-                    #self.birdview_data.put(self.sensor.get_data())
-                    self.callback(self.sensor.get_data())
-
-                # Update the previous frame
+                self.callback(self.sensor.get_data())
                 self.previous_frame = frame
             else:
                 time.sleep(0.005)
 
-    def read_birdview_queue(self):
-        return self.get_birdview_data()
-
-    def destroy_sensor(self):
+    def destroy(self):
         """Stop the sensor and its execution"""
         self.running = False
         self.sensor.destroy()
 
-    def get_birdview_data(self):
-        """Gets the data of the sensor"""
-        if self.synchronous_mode:
-            return self.birdview_data.get(True, self.timeout)
-        else:
-            return self.birdview_data
+    def parse(self, data):
+        """Parses the data into the corresponfing format"""
+        return data
