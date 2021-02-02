@@ -1,0 +1,63 @@
+# To see the complete list of configurable parameters see:
+# https://github.com/ray-project/ray/blob/master/rllib/agents/trainer.py
+"framework": "torch"
+"horizon": 1000
+"num_workers": 1
+"num_gpus_per_worker": 1
+"num_cpus_per_worker": 20
+"batch_mode": "complete_episodes"
+"rollout_fragment_length": 4
+"horizon": 6400
+"timesteps_per_iteration": 10000
+"train_batch_size": 32
+"learning_starts": 0
+"buffer_size": 5000
+"lr": 0.005
+"exploration_config": {
+  "type": "EpsilonGreedy",
+  "initial_epsilon": 1.0,
+  "final_epsilon": 0.02,
+  "epsilon_timesteps": 2500000
+}
+"model": {
+  "dim": 300,
+  "conv_filters": [
+    [ 16, [ 5, 5 ], 4 ],
+    [ 32, [ 5, 5 ], 2 ],
+    [ 32, [ 5, 5 ], 2 ],
+    [ 64, [ 5, 5 ], 1 ],
+    [ 64, [ 5, 5 ], 2 ],
+    [ 128, [ 5, 5 ], 2 ],
+    [ 512, [ 5, 5 ], 1 ],
+  ]
+}
+
+env_config:
+  carla:
+    host: "localhost"
+    timeout: 10.0
+    timestep: 0.05
+    retries_on_error: 25
+    resolution_x: 600
+    resolution_y: 600
+    quality_level: "Low"
+    subleveling: True
+    no_rendering: True
+
+  RAY: True
+  DEBUG_MODE: False
+
+  experiment:
+    hero_blueprint: "vehicle.lincoln.mkz2017"
+    town: "Town01_Opt"
+    n_vehicles: 0
+    n_walkers: 0
+    sensors:
+      collision:
+        type: "sensor.other.collision"
+      lidar:
+        type: "sensor.lidar.ray_cast"
+      birdview:
+        type: "sensor.birdview"
+        size: 300
+        radius: 15
