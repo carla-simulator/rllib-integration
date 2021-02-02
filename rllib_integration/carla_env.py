@@ -31,13 +31,14 @@ class CarlaEnv(gym.Env):
 
         self.world = self.core.get_core_world()
         self.map = self.world.get_map()
+        self.spawn_points = self.map.get_spawn_points()
 
         self.reset()
 
     def reset(self):
         self.core.reset_sensors(self.experiment_config["sensors"])
 
-        self.experiment.spawn_hero(self.world, self.experiment.start_location, autopilot=False)
+        self.experiment.spawn_hero(self.world, self.spawn_points, autopilot=False)
 
         self.core.setup_sensors(
             self.experiment.experiment_config["sensors"],
@@ -56,7 +57,7 @@ class CarlaEnv(gym.Env):
         self.experiment.tick(self.core, self.world, action)
         observation, info = self.experiment.get_observation(self.core)
         observation = self.experiment.process_observation(self.core, observation)
-        reward = self.experiment.compute_reward(self.core,observation, self.map, self.world)
+        reward = self.experiment.compute_reward(self.core,observation, self.map)
         done = self.experiment.get_done_status()
 
         return observation, reward, done, info
