@@ -70,8 +70,8 @@ class DQNExperiment(BaseExperiment):
         :param core:
         :return:
         """
-        self.previous_distance = 0
-        self.i = 0
+        self.last_location = self.start_location
+        self.last_velocity = self.get_speed()
         self.frame_stack = 1  # can be 1,2,3,4
         self.prev_image_0 = None
         self.prev_image_1 = None
@@ -146,30 +146,77 @@ class DQNExperiment(BaseExperiment):
         self.observation_space = image_space
 
     def get_done_status(self):
-        #done = self.observation["collision"] is not False or not self.check_lane_type(map)
-        # self.done_idle = self.max_idle < self.t_idle
-        # if self.get_speed() > 2.0:
-        #     self.t_idle = 0
-        # self.done_max_time = self.max_ep_time < self.t_ep
-        # self.done_falling = self.hero.get_location().z < -0.5
-        return self.done_idle or self.done_max_time or self.done_falling
+        self.done_idle = self.max_idle < self.time_idle
+        if self.get_speed() > 1.0:
+            self.time_idle = 0
+        self.done_falling = self.hero.get_location().z < -0.5
+        return self.done_idle or self.done_falling
 
-    def inside_lane(self, map):
-        self.current_w = map.get_waypoint(self.hero.get_location(), lane_type=carla.LaneType.Any)
-        return self.current_w.lane_type in self.allowed_types
+    def find_current_waypoint(self, map_):
+        return map_.get_waypoint(self.hero.get_location(), lane_type=carla.LaneType.Any)
 
-    def dist_to_driving_lane(self, map_):
-        cur_loc = self.hero.get_location()
-        cur_w = map_.get_waypoint(cur_loc)
-        return math.sqrt((cur_loc.x - cur_w.transform.location.x)**2 +
-                         (cur_loc.y - cur_w.transform.location.y)**2)
+    def inside_lane(self, waypoint):
+        return waypoint.lane_type in self.allowed_types
 
-    def compute_reward(self, core, observation, map, world):
+    def compute_reward(self, core, observation, map_):
         """
         Reward function
         :param observation:
         :param core:
         :return:
         """
-        # TODO
-        return 0
+
+        def unit_vector(vector):
+            return vector / np.linalg.norm(vector)
+        def compute_angle(u, v):
+            return -math.atan2(u[0]*v[1] - u[1]*v[0], u[0]*v[0] + u[1]*v[1])
+
+        # Hero-related variables
+        hero_waypoint = self.find_current_waypoint(map_)
+        hero_location = self.hero.get_location()
+        hero_velocity = self.get_speed()
+        hero_heading = self.hero.get_transform().get_forward_vector()
+        hero_heading = [hero_heading.x, hero_heading.y]
+        wp_heading = hero_waypoint.transform.get_forward_vector()
+        wp_heading = [wp_heading.x, wp_heading.y]
+        hero_to_wp = unit_vector([
+            hero_waypoint.transform.location.x - hero_location.x,
+            hero_waypoint.transform.location.y - hero_location.y
+        ])
+
+        # Compute deltas
+        delta_distance = float(np.sqrt(np.square(hero_location.x - self.last_location.x) + \
+                            np.square(hero_location.y - self.last_location.y)))
+        delta_velocity = hero_velocity - self.last_velocity
+        dot_product = np.dot(hero_heading, wp_heading)
+        angle = compute_angle(hero_heading, hero_to_wp)
+
+        # Update varibles
+        self.last_location = hero_location
+        self.last_velocity = hero_velocity
+
+        # Calculate reward
+        reward = 0
+
+        # Reward if going forward
+        if delta_distance > 0:
+            reward += 10*delta_distance
+
+        # Reward if going faster than last step
+        reward += 0.05 * delta_velocity
+
+        # Penalize if not inside the lane
+        if not self.inside_lane(hero_waypoint):
+            reward += -0.5
+
+        if dot_product < 0.0 and not(hero_waypoint.is_junction):
+            reward += -0.5
+
+        if self.done_falling:
+            print("Done falling")
+            reward += -3
+        if self.done_idle:
+            print("Done idle")
+            reward += -1
+
+        return reward
