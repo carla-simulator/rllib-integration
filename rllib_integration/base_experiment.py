@@ -222,26 +222,10 @@ class BaseExperiment(object):
 
     def get_observation(self, core):
 
-        info = {}
-        for i in range(0,len(self.experiment_config["SENSOR_CONFIG"]["SENSOR"])):
-            if len(self.experiment_config["SENSOR_CONFIG"]["SENSOR"]) != len(self.experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"]):
-                raise Exception("You need to specify the CAMERA_OBSERVATION for each sensor.")
-            if self.experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"][i]:
-                self.observation['camera'].append(core.get_camera_data())
-        if self.experiment_config["OBSERVATION_CONFIG"]["COLLISION_OBSERVATION"]:
-            self.observation["collision"] = core.get_collision_data()
-        if self.experiment_config["OBSERVATION_CONFIG"]["LOCATION_OBSERVATION"]:
-            self.observation["location"] = self.hero.get_transform()
-        if self.experiment_config["OBSERVATION_CONFIG"]["LANE_OBSERVATION"]:
-            self.observation["lane_invasion"] = core.get_lane_data()
-        if self.experiment_config["OBSERVATION_CONFIG"]["GNSS_OBSERVATION"]:
-            self.observation["gnss"] = core.get_gnss_data()
-        if self.experiment_config["OBSERVATION_CONFIG"]["IMU_OBSERVATION"]:
-            self.observation["imu"] = core.get_imu_data()
-        if self.experiment_config["OBSERVATION_CONFIG"]["RADAR_OBSERVATION"]:
-            self.observation["radar"] = core.get_radar_data()
-        if self.experiment_config["OBSERVATION_CONFIG"]["BIRDVIEW_OBSERVATION"]:
-            self.observation["birdview"] = core.get_birdview_data()
+        # TODO: Should I user self.observation instead?
+        observation, info = {}
+        for name, sensor in self._sensors:
+            observation[name] = sensor.get_data()
 
         info["control"] = {
             "steer": self.action.steer,
@@ -252,18 +236,6 @@ class BaseExperiment(object):
         }
 
         return self.observation, info
-
-    def update_measurements(self, core):
-
-        for i in range(0,len(self.experiment_config["SENSOR_CONFIG"]["SENSOR"])):
-            if len(self.experiment_config["SENSOR_CONFIG"]["SENSOR"]) != len(self.experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"]):
-                raise Exception("You need to specify the CAMERA_OBSERVATION for each sensor.")
-            if self.experiment_config["OBSERVATION_CONFIG"]["CAMERA_OBSERVATION"][i]:
-                core.update_camera()
-        if self.experiment_config["OBSERVATION_CONFIG"]["COLLISION_OBSERVATION"]:
-            core.update_collision()
-        if self.experiment_config["OBSERVATION_CONFIG"]["LANE_OBSERVATION"]:
-            core.update_lane_invasion()
 
     def update_actions(self, action, hero):
         if action is None:
@@ -353,7 +325,7 @@ class BaseExperiment(object):
     # -- Tick -----------------------------------------------------------
     # ==============================================================================
 
-    def experiment_tick(self, core, world, action):
+    def tick(self, core, world, action):
 
         """
         This is the "tick" logic.
@@ -365,5 +337,5 @@ class BaseExperiment(object):
         world.tick()
         self.t_idle += 1
         self.t_ep += 1
-        self.update_measurements(core)
+        # self.update_measurements(core)
         self.update_actions(action, self.hero)

@@ -78,19 +78,20 @@ class DQNExperiment(BaseExperiment):
         self.prev_image_2 = None
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
 
-    def set_observation_space(self):
-        num_of_channels = 3
-        image_space = Box(
-            low=0.0,
-            high=255.0,
-            shape=(
-                self.experiment_config["BIRDVIEW_CONFIG"]["SIZE"],
-                self.experiment_config["BIRDVIEW_CONFIG"]["SIZE"],
-                num_of_channels * self.experiment_config["BIRDVIEW_CONFIG"]["FRAMESTACK"],
-            ),
-            dtype=np.uint8,
-        )
-        self.observation_space = image_space
+    def get_observation(self, core):
+        obs = core.sensor_interface.get_data()
+        print("Data received: {}".format(obs.keys()))
+        
+        info = {}
+        info["control"] = {
+            "steer": self.action.steer,
+            "throttle": self.action.throttle,
+            "brake": self.action.brake,
+            "reverse": self.action.reverse,
+            "hand_brake": self.action.hand_brake,
+        }
+        return obs, info
+
 
     def process_observation(self, core, observation):
         """
@@ -129,6 +130,20 @@ class DQNExperiment(BaseExperiment):
         self.prev_image_0 = image
 
         return images
+
+    def set_observation_space(self):
+        num_of_channels = 3
+        image_space = Box(
+            low=0.0,
+            high=255.0,
+            shape=(
+                self.experiment_config["BIRDVIEW_CONFIG"]["SIZE"],
+                self.experiment_config["BIRDVIEW_CONFIG"]["SIZE"],
+                num_of_channels * self.experiment_config["BIRDVIEW_CONFIG"]["FRAMESTACK"],
+            ),
+            dtype=np.uint8,
+        )
+        self.observation_space = image_space
 
     def get_done_status(self):
         #done = self.observation["collision"] is not False or not self.check_lane_type(map)
