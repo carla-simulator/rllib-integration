@@ -76,15 +76,6 @@ class CarlaCore:
         :param ray_delay: Delay so not all servers start simultaneously causing race condition
         :return:
         """
-
-#        if self.environment_config["RAY"] is False:
-#            try:
-#                # Kill all PIDs that start with Carla. Do this if you running a single server or before an experiment
-#                for pid, _ in search_procs_by_name("Carla").items():
-#                    os.kill(pid, signal.SIGKILL)
-#            except:
-#                pass
-
         # Generate a random port to connect to. You need one port for each server-client
         if self.environment_config["DEBUG_MODE"]:
             self.server_port = 2000

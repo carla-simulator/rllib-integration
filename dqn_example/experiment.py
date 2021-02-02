@@ -14,7 +14,7 @@ from gym.spaces import Box
 import carla
 
 from rllib_integration.base_experiment import *
-from rllib_integration.helper.carla_helper import spawn_vehicle_at, post_process_image
+from rllib_integration.helper.carla_helper import post_process_image
 
 from PIL import Image
 
