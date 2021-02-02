@@ -13,7 +13,7 @@ import random
 import carla
 from gym.spaces import Discrete
 
-from rllib_integration.helper.carla_helper import post_process_image
+from rllib_integration.helper import post_process_image
 
 
 class SensorsTransformEnum(enum.Enum):

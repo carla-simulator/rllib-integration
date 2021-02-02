@@ -14,15 +14,15 @@ import time
 import psutil
 import logging
 
-from rllib_integration.helper.camera_manager import CameraManager
-from rllib_integration.helper.bird_view_manager import BirdviewManager
-from rllib_integration.helper.carla_debug import get_actor_display_name
-from rllib_integration.helper.sensors_manager import *
+from rllib_integration.sensors.camera_manager import CameraManager
+from rllib_integration.sensors.bird_view_manager import BirdviewManager
+from rllib_integration.sensors.carla_debug import get_actor_display_name
+from rllib_integration.sensors.sensors_manager import *
 
 
 BASE_CORE_CONFIG = {
     "RAY_DELAY": 1,  # Delay between 0 & RAY_DELAY before starting server so not all servers are launched simultaneously
-    "retries_on_erro": 30,
+    "retries_on_error": 30,
     "timeout": 60.0,
     "host": "localhost",
     "map_buffer": 1.2,  # To find the minimum and maximum coordinates of the map

@@ -6,19 +6,8 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-import os
-import random
-import time
-import sys
 import cv2
 import numpy as np
-import signal
-
-import collections
-
-
-def get_parent_dir(directory):
-    return os.path.dirname(directory)
 
 
 def post_process_image(image, normalized=True, grayscale=True):
