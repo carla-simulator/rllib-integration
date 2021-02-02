@@ -31,7 +31,7 @@ SENSOR_CONFIG = {
 BIRDVIEW_CONFIG = {
     "SIZE": 300,
     "RADIUS": 15,
-    "FRAMESTACK": 1
+    "FRAMESTACK": 4
 }
 
 OBSERVATION_CONFIG = {
@@ -72,7 +72,7 @@ class DQNExperiment(BaseExperiment):
         """
         self.previous_distance = 0
         self.i = 0
-        self.frame_stack = 1  # can be 1,2,3,4
+        self.frame_stack = 4  # can be 1,2,3,4
         self.prev_image_0 = None
         self.prev_image_1 = None
         self.prev_image_2 = None
