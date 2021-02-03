@@ -4,7 +4,7 @@
 "horizon": 1000
 "num_workers": 1
 "num_gpus_per_worker": 1
-"num_cpus_per_worker": 5
+"num_cpus_per_worker": 8
 "batch_mode": "complete_episodes"
 "rollout_fragment_length": 4
 "horizon": 6400
@@ -35,23 +35,24 @@
 env_config:
   carla:
     host: "localhost"
+    sync_mode: True
     timeout: 10.0
     timestep: 0.05
     retries_on_error: 25
     resolution_x: 600
     resolution_y: 600
     quality_level: "Low"
-    subleveling: True
-    no_rendering: True
-
-  RAY: True
-  DEBUG_MODE: False
+    enable_map_assets: False
+    enable_rendering: True
+    ray: True
+    debug: False
 
   experiment:
     hero_blueprint: "vehicle.lincoln.mkz2017"
     town: "Town05_Opt"
     n_vehicles: 0
     n_walkers: 0
+    framestack: 4
     sensors:
       collision:
         type: "sensor.other.collision"

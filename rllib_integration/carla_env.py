@@ -25,39 +25,41 @@ class CarlaEnv(gym.Env):
         self.experiment = self.config["experiment"]["type"](self.config["experiment"])
         self.action_space = self.experiment.get_action_space()
         self.observation_space = self.experiment.get_observation_space()
-        self.experiment_config = self.experiment.get_experiment_config()
+        self.experiment_config = self.experiment.config
 
-        self.core = CarlaCore(self.config, self.experiment_config, self.config["carla"])
+        self.core = CarlaCore(self.config['carla'])
+        self.core.setup_experiment(self.experiment_config)
 
         self.world = self.core.get_core_world()
         self.map = self.world.get_map()
-        self.spawn_points = self.map.get_spawn_points()
 
         self.reset()
 
     def reset(self):
-        self.core.reset_sensors(self.experiment_config["sensors"])
+        # Reset sensors hero and 
+        self.core.reset_sensors(self.experiment_config["sensors"]) # TODO: join reset_sensors and setup_sensors
+        self.core.reset_hero(self.experiment_config)
+        self.hero = self.core.get_hero()
+        self.core.setup_sensors(self.experiment.config["sensors"], self.hero, self.config["carla"]["sync_mode"])
 
-        self.experiment.spawn_hero(self.world, self.spawn_points, autopilot=False)
+        # Save hero realted information
+        self.experiment.set_hero(self.hero)
 
-        self.core.setup_sensors(
-            self.experiment.experiment_config["sensors"],
-            self.experiment.get_hero(),
-            self.world.get_settings().synchronous_mode,
-        )
+        # Reset the experiment
+        self.experiment.reset()
 
-        self.experiment.initialize_reward(self.core)
-        self.experiment.set_server_view(self.core)
-        self.experiment.tick(self.core, self.world, action=None)
-        obs, info = self.experiment.get_observation(self.core)
-        obs = self.experiment.process_observation(self.core, obs)
-        return obs
+        # Tick once
+        self.core.tick()
+        observation, info = self.experiment.get_observation(self.core)
+        observation = self.experiment.process_observation(observation)
+        return observation
 
     def step(self, action):
-        self.experiment.tick(self.core, self.world, action)
+        self.core.tick()
+        self.experiment.update_actions(action, self.hero)
         observation, info = self.experiment.get_observation(self.core)
-        observation = self.experiment.process_observation(self.core, observation)
-        reward = self.experiment.compute_reward(self.core,observation, self.map)
+        observation = self.experiment.process_observation(observation)
+        reward = self.experiment.compute_reward(observation, self.map)
         done = self.experiment.get_done_status()
 
         return observation, reward, done, info

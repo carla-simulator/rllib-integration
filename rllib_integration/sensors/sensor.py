@@ -72,7 +72,6 @@ class CarlaSensor(BaseSensor):
 
     def destroy(self):
         if self.sensor is not None:
-            print("Destroying sensor {}...".format(self.name))
             self.sensor.destroy()
             self.sensor = None
 

@@ -163,11 +163,8 @@ def main():
         description=__doc__)
     argparser.add_argument("configuration_file",
                            help="Configuration file (*.yaml)")
-    argparser.add_argument(
-        '-c', '--checkpoint',
-        metavar='D',
-        default= os.path.expanduser("~")+"/ray_results",
-        help='Specified directory to save results')
+    argparser.add_argument("checkpoint",
+                           help='Specified directory to save results')
     argparser.add_argument(
         '-d', '--device',
         metavar='D',

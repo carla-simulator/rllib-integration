@@ -23,11 +23,19 @@ from rllib_integration.sensors.factory import SensorFactory
 
 
 BASE_CORE_CONFIG = {
-    "RAY_DELAY": 1,  # Delay between 0 & RAY_DELAY before starting server so not all servers are launched simultaneously
-    "retries_on_error": 30,
-    "timeout": 60.0,
     "host": "localhost",
-    "map_buffer": 1.2,  # To find the minimum and maximum coordinates of the map
+    "timeout": 10.0,
+    "sync_mode": True,
+    "timestep": 0.05,
+    "retries_on_error": 10,
+    "resolution_x": 600,
+    "resolution_y": 600,
+    "quality_level": "Low",
+    "enable_map_assets": True,  # enable / disable all town assets except for the road
+    "enable_rendering": True,  # enable / disable camera images
+    "ray": True,  # Same as above
+    "ray_delay": 1,  # Delay between 0 & RAY_DELAY before starting server so not all servers are launched simultaneously
+    "debug": False  # TODO: use it
 }
 
 
@@ -36,75 +44,101 @@ def is_used(port):
 
 
 class CarlaCore:
-    def __init__(self, environment_config, experiment_config, core_config={}):
+    def __init__(self, core_config={}):
         """
         Initialize the server, clients, hero and sensors
         :param environment_config: Environment Configuration
         :param experiment_config: Experiment Configuration
         """
-        self.core_config = BASE_CORE_CONFIG.copy()
-        self.core_config.update(core_config)
-        self.environment_config = environment_config
-        self.experiment_config = experiment_config
+        self.config = BASE_CORE_CONFIG.copy()
+        self.config.update(core_config) # TODO: remove ray and debug from 'carla'
 
-        self.init_server(self.core_config["RAY_DELAY"])
-
-        self.client, self.world, self.town_map, self.actors = self.__connect_client(
-            self.core_config["host"],
-            self.server_port,
-            self.core_config["timeout"],
-            self.core_config["retries_on_error"],
-            self.experiment_config["Disable_Rendering_Mode"],
-            True,
-            self.experiment_config["Weather"],
-            self.experiment_config["town"]
-        )
-
-        self.set_map_dimensions()
+        self.init_server()
+        self.connect_client()
 
         self.sensor_interface = SensorInterface()
-        # self.camera_manager = None
-        # self.collision_sensor = None
-        # self.radar_sensor = None
-        # self.imu_sensor = None
-        # self.gnss_sensor = None
-        # self.lane_sensor = None
-        # self.birdview_sensor = None
+        self.hero = None
+
+    def setup_experiment(self, experiment_config):
 
         # Spawn traffic
         self.spawn_npcs(
-            self.experiment_config["n_vehicles"],
-            self.experiment_config["n_walkers"],
+            experiment_config["n_vehicles"],
+            experiment_config["n_walkers"],
             hybrid = True
+        )
+
+        if self.config["enable_map_assets"]:
+            map_layer = carla.MapLayer.All
+        else:
+            map_layer = carla.MapLayer.NONE
+
+        self.world = self.client.load_world(
+            map_name = experiment_config["town"],
+            reset_settings = False,
+            map_layers = map_layer)
+
+        self.world.set_weather(experiment_config["weather"])
+        self.town_map = self.world.get_map()
+        # TODO: move weather and load town to here from connect_client
+        self.actors = self.world.get_actors()
+    # ==============================================================================
+    # -- Tick -----------------------------------------------------------
+    # ==============================================================================
+
+    def tick(self):
+        self.world.tick()
+        self.set_server_view()
+
+    def set_server_view(self):
+        """
+        Set server view to be behind the hero
+        :param core:Carla Core
+        :return:
+        """
+        # spectator following the car
+        transforms = self.hero.get_transform()
+        server_view_x = self.hero.get_location().x - 5 * transforms.get_forward_vector().x
+        server_view_y = self.hero.get_location().y - 5 * transforms.get_forward_vector().y
+        server_view_z = self.hero.get_location().z + 3
+        server_view_pitch = transforms.rotation.pitch
+        server_view_yaw = transforms.rotation.yaw
+        server_view_roll = transforms.rotation.roll
+        self.spectator = self.get_core_world().get_spectator()
+        self.spectator.set_transform(
+            carla.Transform(
+                carla.Location(x=server_view_x, y=server_view_y, z=server_view_z),
+                carla.Rotation(pitch=server_view_pitch,yaw=server_view_yaw,roll=server_view_roll),
+            )
         )
 
     # ==============================================================================
     # -- ServerSetup -----------------------------------------------------------
     # ==============================================================================
-    def init_server(self, ray_delay=0):
+    def init_server(self):
         """
         Start a server on a random port
         :param ray_delay: Delay so not all servers start simultaneously causing race condition
         :return:
         """
         # Generate a random port to connect to. You need one port for each server-client
-        if self.environment_config["DEBUG_MODE"]:
-            self.server_port = 2000
-        else:
-            self.server_port = random.randint(15000, 32000)
+        # if self.environment_config["debug"]:
+        #     self.server_port = 2000
+        # else:
+        self.server_port = random.randint(15000, 32000)
         # Create a new server process and start the client.
-        if self.environment_config["RAY"] is True:
+        if self.config["ray"] is True:
             # Ray tends to start all processes simultaneously. This causes problems
             # => random delay to start individual servers
-            delay_sleep = random.uniform(0, ray_delay)
+            delay_sleep = random.uniform(0, self.config["ray_delay"])
             time.sleep(delay_sleep)
 
-        if self.environment_config["DEBUG_MODE"] is True:
-            # Big Screen for Debugging
-            for i in range(0,len(self.experiment_config["SENSOR_CONFIG"]["SENSOR"])):
-                self.experiment_config["SENSOR_CONFIG"]["CAMERA_X"][i] = 900
-                self.experiment_config["SENSOR_CONFIG"]["CAMERA_Y"][i] = 1200
-            self.experiment_config["quality_level"] = "High"
+        # if self.environment_config["debug"] is True:
+        #     # Big Screen for Debugging
+        #     for i in range(0,len(self.experiment_config["SENSOR_CONFIG"]["SENSOR"])):
+        #         self.experiment_config["SENSOR_CONFIG"]["CAMERA_X"][i] = 900
+        #         self.experiment_config["SENSOR_CONFIG"]["CAMERA_Y"][i] = 1200
+        #     self.experiment_config["quality_level"] = "High"
 
         uses_server_port = is_used(self.server_port)
         uses_stream_port = is_used(self.server_port+1)
@@ -121,10 +155,10 @@ class CarlaCore:
         server_command = [
             "{}/CarlaUE4.sh".format(os.environ["CARLA_ROOT"]),
             "-windowed",
-            "-ResX={}".format(self.core_config["resolution_x"]),
-            "-ResY={}".format(self.core_config["resolution_y"]),
+            "-ResX={}".format(self.config["resolution_x"]),
+            "-ResY={}".format(self.config["resolution_y"]),
             "--carla-rpc-port={}".format(self.server_port),
-            "-quality-level={}".format(self.core_config["quality_level"]),
+            "-quality-level={}".format(self.config["quality_level"]),
             "--no-rendering",
         ]
 
@@ -150,7 +184,7 @@ class CarlaCore:
     # ==============================================================================
     # -- ClientSetup -----------------------------------------------------------
     # ==============================================================================
-    def __connect_client(self, host, port, timeout, num_retries, disable_rendering_mode, sync_mode, weather, town):
+    def connect_client(self):
         """
         Connect the client
 
@@ -160,108 +194,30 @@ class CarlaCore:
         :param num_retries: Number of times to try before giving up
         :param disable_rendering_mode: True to disable rendering
         :param sync_mode: True for RL
-        :param weather: The weather to start the world
-        :param town: current town
         :return:
         """
 
-        for i in range(num_retries):
+        for i in range(self.config["retries_on_error"]):
             try:
-                carla_client = carla.Client(host, port)
-                carla_client.set_timeout(timeout)
-                carla_client.load_world(
-                    map_name=town,
-                    map_layers=carla.MapLayer.NONE if self.core_config["subleveling"] else carla.MapLayer.All
-                )
+                self.client = carla.Client(self.config["host"], self.server_port)
+                self.client.set_timeout(self.config["timeout"])
+                self.world = self.client.get_world()
 
-                world = carla_client.get_world()
-
-                town_map = world.get_map()
-                actors = world.get_actors()
-                world.set_weather(weather)
-                world.wait_for_tick()
-
-                settings = world.get_settings()
-                settings.no_rendering_mode = disable_rendering_mode
-                settings.synchronous_mode = sync_mode
-                settings.fixed_delta_seconds = self.core_config["timestep"]
-
-                world.apply_settings(settings)
+                settings = self.world.get_settings()
+                settings.no_rendering_mode = not self.config["enable_rendering"]
+                settings.synchronous_mode = self.config["sync_mode"]
+                settings.fixed_delta_seconds = self.config["timestep"]
+                self.world.apply_settings(settings)
+                self.world.tick()
 
                 print("Server setup is complete")
-
-                return carla_client, world, town_map, actors
+                return
 
             except Exception as e:
-                print(" Waiting for server to be ready: {}, attempt {} of {}".format(e, i + 1, num_retries))
+                print(" Waiting for server to be ready: {}, attempt {} of {}".format(e, i + 1, self.config["retries_on_error"]))
                 time.sleep(3)
-        # if (i + 1) == num_retries:
-        raise Exception("Can not connect to server. Try increasing timeouts or num_retries")
 
-    # ==============================================================================
-    # -- MapDigestionsSetup -----------------------------------------------------------
-    # ==============================================================================
-
-    def set_map_dimensions(self):
-
-        """
-        From the spawn points, we get min and max and add some buffer so we can normalize the location of agents (0..1)
-        This allows you to get the location of the vehicle between 0 and 1
-
-        :input
-        self.core_config["map_buffer"]. Because we use spawn points, we add a buffer as vehicle can drive off the road
-
-        :output:
-        self.coord_normalization["map_normalization"] = Using larger of (X,Y) axis to normalize x,y
-        self.coord_normalization["map_min_x"] = minimum x coordinate
-        self.coord_normalization["map_min_y"] = minimum y coordinate
-        :return: None
-        """
-
-        map_buffer = self.core_config["map_buffer"]
-        spawn_points = list(self.world.get_map().get_spawn_points())
-
-        min_x = min_y = 1000000
-        max_x = max_y = -1000000
-
-        for spawn_point in spawn_points:
-            min_x = min(min_x, spawn_point.location.x)
-            max_x = max(max_x, spawn_point.location.x)
-
-            min_y = min(min_y, spawn_point.location.y)
-            max_y = max(max_y, spawn_point.location.y)
-
-        center_x = (max_x+min_x)/2
-        center_y = (max_y+min_y)/2
-
-        x_buffer = (max_x - center_x) * map_buffer
-        y_buffer = (max_y - center_y) * map_buffer
-
-        min_x = center_x - x_buffer
-        max_x = center_x + x_buffer
-
-        min_y = center_y - y_buffer
-        max_y = center_y + y_buffer
-
-        self.coord_normalization = {"map_normalization": max(max_x - min_x, max_y - min_y),
-                                    "map_min_x": min_x,
-                                    "map_min_y": min_y}
-
-    def normalize_coordinates(self, input_x, input_y):
-
-        """
-        :param input_x: X location of your actor
-        :param input_y: Y location of your actor
-        :return: The normalized location of your actor
-        """
-        output_x = (input_x - self.coord_normalization["map_min_x"]) / self.coord_normalization["map_normalization"]
-        output_y = (input_y - self.coord_normalization["map_min_y"]) / self.coord_normalization["map_normalization"]
-
-        # ToDO Possible bug (Clipped the observation and still didn't stop the observations from being under
-        output_x = float(np.clip(output_x, 0, 1))
-        output_y = float(np.clip(output_y, 0, 1))
-
-        return output_x, output_y
+        raise Exception("Cannot connect to server. Try increasing 'timeout' or 'retries_on_error' at the carla configuration")
 
     # ==============================================================================
     # -- SensorSetup -----------------------------------------------------------
@@ -286,7 +242,6 @@ class CarlaCore:
         :param experiment_config: sensors configured in the experiment
         :return:
         """
-        print("Vamos a destruir los siguientes sensors: {}".format(self.sensor_interface.sensors))
         for sensor in self.sensor_interface.sensors.values():
             sensor.destroy()
 
@@ -466,3 +421,49 @@ class CarlaCore:
             all_actors[i].set_max_speed(float(walker_speed[int(i/2)]))
 
         self.world.tick()
+
+    # ==============================================================================
+    # -- Hero -----------------------------------------------------------
+    # ==============================================================================
+    def reset_hero(self, experiment_config):
+
+        """
+        This function spawns the hero vehicle. It makes sure that if a hero exists, it destroys the hero and respawn
+        :param core:
+        :param transform: Hero location
+        :return:
+        """
+        spawn_points = self.town_map.get_spawn_points()
+
+        self.hero_blueprints = self.world.get_blueprint_library().find(experiment_config['hero_blueprint'])
+        self.hero_blueprints.set_attribute("role_name", "hero")
+
+        if self.hero is not None:
+            self.hero.destroy()
+            self.hero = None
+
+        random.shuffle(spawn_points, random.random)
+        for i in range(0,len(spawn_points)):
+            next_spawn_point = spawn_points[i % len(spawn_points)]
+            self.hero = self.world.try_spawn_actor(self.hero_blueprints, next_spawn_point)
+            if self.hero is not None:
+                break
+            else:
+                print("Could not spawn hero, changing spawn point")
+
+        if self.hero is None:
+            print("We ran out of spawn points")
+            return
+
+        self.world.tick()
+        print("Hero spawned!")
+        self.start_location = spawn_points[i].location
+        self.past_action = carla.VehicleControl(0.0, 0.00, 0.0, False, False)
+
+    def get_hero(self):
+
+        """
+        Get hero vehicle
+        :return:
+        """
+        return self.hero
