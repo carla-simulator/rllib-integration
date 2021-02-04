@@ -23,6 +23,7 @@ class DQNExperiment(BaseExperiment):
         self.frame_stack = self.config["others"]["framestack"]
         self.max_idle = self.config["others"]["max_idle"]
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
+        self.last_heading_deviation = 0
 
     def reset(self):
         """Called at the beginning and each time the simulation is reset"""
@@ -40,6 +41,8 @@ class DQNExperiment(BaseExperiment):
         self.prev_image_0 = None
         self.prev_image_1 = None
         self.prev_image_2 = None
+
+        self.last_heading_deviation = 0
 
     def get_action_space(self):
         """Returns the action space, in this case, a discrete space"""
@@ -154,15 +157,16 @@ class DQNExperiment(BaseExperiment):
 
     def compute_reward(self, observation, core):
         """Computes the reward"""
-
         def unit_vector(vector):
             return vector / np.linalg.norm(vector)
         def compute_angle(u, v):
             return -math.atan2(u[0]*v[1] - u[1]*v[0], u[0]*v[0] + u[1]*v[1])
         def find_current_waypoint(map_, hero):
-            return map_.get_waypoint(hero.get_location(), lane_type=carla.LaneType.Any)
+            return map_.get_waypoint(hero.get_location(), project_to_road=False, lane_type=carla.LaneType.Any)
         def inside_lane(waypoint, allowed_types):
-            return waypoint.lane_type in allowed_types
+            if waypoint is not None:
+                return waypoint.lane_type in allowed_types
+            return False
 
         world = core.world
         hero = core.hero
@@ -174,23 +178,15 @@ class DQNExperiment(BaseExperiment):
         hero_velocity = self.get_speed(hero)
         hero_heading = hero.get_transform().get_forward_vector()
         hero_heading = [hero_heading.x, hero_heading.y]
-        wp_heading = hero_waypoint.transform.get_forward_vector()
-        wp_heading = [wp_heading.x, wp_heading.y]
-        hero_to_wp = unit_vector([
-            hero_waypoint.transform.location.x - hero_location.x,
-            hero_waypoint.transform.location.y - hero_location.y
-        ])
 
         # Initialize last location
         if self.last_location == None:
-            self.last_locartion = hero_location
+            self.last_location = hero_location
 
         # Compute deltas
         delta_distance = float(np.sqrt(np.square(hero_location.x - self.last_location.x) + \
                             np.square(hero_location.y - self.last_location.y)))
         delta_velocity = hero_velocity - self.last_velocity
-        dot_product = np.dot(hero_heading, wp_heading)
-        angle = compute_angle(hero_heading, hero_to_wp)
 
         # Update varibles
         self.last_location = hero_location
@@ -209,9 +205,23 @@ class DQNExperiment(BaseExperiment):
         # Penalize if not inside the lane
         if not inside_lane(hero_waypoint, self.allowed_types):
             reward += -2
+            self.last_heading_deviation = 0
+        else:
+            if not(hero_waypoint.is_junction):
+                wp_heading = hero_waypoint.transform.get_forward_vector()
+                wp_heading = [wp_heading.x, wp_heading.y]
 
-        if dot_product < 0.0 and not(hero_waypoint.is_junction):
-            reward += -2
+                dot_product = np.dot(hero_heading, wp_heading)
+                if dot_product > 0.7:
+                    self.last_heading_deviation = 1
+                else:
+                    self.last_heading_deviation = 0
+
+                dot_product = np.dot(hero_heading, wp_heading)
+                if dot_product < 0.0:
+                    reward += -2
+            else:
+                self.last_heading_deviation = 1
 
         if self.done_falling:
             reward += -40
