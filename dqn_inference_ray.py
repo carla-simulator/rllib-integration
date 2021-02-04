@@ -19,10 +19,10 @@ import yaml
 import ray
 from ray.rllib.agents.dqn import DQNTrainer
 
+from dqn_example.dqn_experiment import DQNExperiment
 from rllib_integration.carla_env import CarlaEnv
-from rllib_integration.carla_core import CarlaCore
+from rllib_integration.carla_core import kill_all_servers
 
-from dqn_example.experiment import DQNExperiment
 
 
 def main(args):
@@ -80,4 +80,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nshutdown by user")
     finally:
-        CarlaCore.kill_all_servers()
+        kill_all_servers()

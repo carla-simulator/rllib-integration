@@ -22,20 +22,19 @@
 "model": {
   "dim": 300,
   "conv_filters": [
-    [ 16, [ 5, 5 ], 4 ],
-    [ 32, [ 5, 5 ], 2 ],
-    [ 32, [ 5, 5 ], 2 ],
-    [ 64, [ 5, 5 ], 1 ],
-    [ 64, [ 5, 5 ], 2 ],
-    [ 128, [ 5, 5 ], 2 ],
-    [ 512, [ 5, 5 ], 1 ],
+    [16, [5, 5], 4],
+    [32, [5, 5], 2],
+    [32, [5, 5], 2],
+    [64, [5, 5], 1],
+    [64, [5, 5], 2],
+    [128, [5, 5], 2],
+    [512, [5, 5], 1],
   ]
 }
 
 env_config:
   carla:
     host: "localhost"
-    sync_mode: True
     timeout: 10.0
     timestep: 0.05
     retries_on_error: 25
@@ -44,21 +43,24 @@ env_config:
     quality_level: "Low"
     enable_map_assets: False
     enable_rendering: True
-    ray: True
-    debug: False
+    show_display: True
 
   experiment:
-    hero_blueprint: "vehicle.lincoln.mkz2017"
+    hero:
+      blueprint: "vehicle.lincoln.mkz2017"
+      sensors:
+        collision:
+          type: "sensor.other.collision"
+        birdview:
+          type: "sensor.birdview"
+          size: 300
+          radius: 15
+    background_activity:
+      n_vehicles: 0
+      n_walkers: 0
+      hybrid: True
     town: "Town05_Opt"
-    n_vehicles: 0
-    n_walkers: 0
-    framestack: 4
-    sensors:
-      collision:
-        type: "sensor.other.collision"
-      lidar:
-        type: "sensor.lidar.ray_cast"
-      birdview:
-        type: "sensor.birdview"
-        size: 300
-        radius: 15
+    weather: None
+    others:
+      framestack: 4
+      max_idle: 600

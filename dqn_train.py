@@ -13,24 +13,24 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import argparse
 import os
 import shutil
 import yaml
 import importlib
 import inspect
-import sys
 
 import ray
 from ray import tune
 from ray.rllib.agents.dqn import DQNTrainer
 import torch
 
+from dqn_example.dqn_experiment import DQNExperiment
 from rllib_integration.carla_env import CarlaEnv
-from rllib_integration.carla_core import CarlaCore
+from rllib_integration.carla_core import kill_all_servers
 from rllib_integration.base_experiment import BaseExperiment
 
-from dqn_example.experiment_dqn import DQNExperiment
 
 
 class CustomDQNTrainer(DQNTrainer):
@@ -143,7 +143,7 @@ def run(args):
             config["env_config"]["experiment"]["type"] = DQNExperiment
 
         while True:
-            CarlaCore.kill_all_servers()
+            kill_all_servers()
             ray.init()
             tune.run(
                 CustomDQNTrainer,
@@ -159,7 +159,7 @@ def run(args):
             checkpoint = find_latest_checkpoint(args)
 
     finally:
-        CarlaCore.kill_all_servers()
+        kill_all_servers()
         ray.shutdown()
 
 

@@ -7,72 +7,73 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 import carla
+from rllib_integration.helper import join_dicts
 
 BASE_EXPERIMENT_CONFIG = {
-    "hero_blueprint": "vehicle.lincoln.mkz2017",
-    "town": "Town05_Opt",
-    "n_vehicles": 0,
-    "n_walkers": 0,
-    "sensors": {
-        # "sensor_name1": {
-        #     "attribute1": attribute_value1
-        #     "attribute2": attribute_value2
-        # }
-        # "sensor_name2": {
-        #     "attribute_name1": attribute_value1
-        #     "attribute_name2": attribute_value2
-        # }
+    "hero": {
+        "blueprint": "vehicle.lincoln.mkz2017",
+        "sensors": {
+            # "sensor_name1": {
+            #     "attribute1": attribute_value1
+            #     "attribute2": attribute_value2
+            # }
+            # "sensor_name2": {
+            #     "attribute_name1": attribute_value1
+            #     "attribute_name2": attribute_value2
+            # }
+        }
     },
-    "weather": carla.WeatherParameters.ClearNoon, #TODO: use it
+    "background_activity": {
+        "n_vehicles": 0,
+        "n_walkers": 0,
+        "hybrid": True
+    },
+    "town": "Town05_Opt",
+    "weather": carla.WeatherParameters.ClearNoon,
 }
 
 class BaseExperiment(object):
-    def __init__(self, user_config):
-        self.config = BASE_EXPERIMENT_CONFIG.copy()
-        self.config.update(user_config)
-        self.hero = None
-        self.action = carla.VehicleControl()
-
-    def set_hero(self, hero):
-        """Sets the ego vehicle"""
-        self.hero = hero
+    def __init__(self, config):
+        self.config = join_dicts(BASE_EXPERIMENT_CONFIG, config)
 
     def reset(self):
         """Called at the beginning and each time the simulation is reset"""
         pass
 
-    def get_actions(self):
-        """Returns the actions"""
-        raise NotImplementedError
-
-    def get_observation(self, core):
-        obs = core.sensor_interface.get_data()
-        return obs, {}
-
     def get_action_space(self):
         """Returns the action space"""
-        raise NotImplementedError
-
-    def update_actions(self, action, hero):
-        """Given the action, moves the hero vehicle"""
         raise NotImplementedError
 
     def get_observation_space(self):
         """Returns the observation space"""
         raise NotImplementedError
 
-    def process_observation(self, observation):
-        """Main function to do all the post processing of observations (sensor data)."""
+    def get_actions(self):
+        """Returns the actions"""
+        raise NotImplementedError
+
+    def compute_action(self, action):
+        """Given the action, returns a carla.VehicleControl() which will be applied to the hero
+        
+        :param action: value outputted by the policy
+        """
+        raise NotImplementedError
+
+    def get_observation(self, sensor_data):
+        """Function to do all the post processing of observations (sensor data).
+
+        :param sensor_data: dictionary {sensor_name: sensor_data}
+
+        Should return a tuple or list with two items, the processed observations,
+        as well as a variable with additional information about such observation.
+        The information variable can be empty
+        """
         return NotImplementedError
 
-    def get_done_status(self):
+    def get_done_status(self, observation, core):
         """Returns whether or not the experiment has to end"""
         return NotImplementedError
 
-    def initialize_reward(self):
-        """Initialization of reward function"""
-        raise NotImplementedError
-
-    def compute_reward(self):
+    def compute_reward(self, observation, core):
         """Computes the reward"""
         return NotImplementedError

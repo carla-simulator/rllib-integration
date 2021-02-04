@@ -1,4 +1,12 @@
 
+#!/usr/bin/env python
+
+# Copyright (c) 2021 Computer Vision Center (CVC) at the Universitat Autonoma de
+# Barcelona (UAB).
+#
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
 import os
 import argparse
 import yaml
@@ -6,10 +14,11 @@ import yaml
 import torch
 import torch.nn as nn
 
+from dqn_example.dqn_experiment import DQNExperiment
 from rllib_integration.carla_env import CarlaEnv
-from rllib_integration.carla_core import CarlaCore
+from rllib_integration.carla_core import kill_all_servers
 
-from dqn_example.experiment import DQNExperiment
+
 
 def get_activation_fn(name=None):
     if name in ["linear", None]:
@@ -201,7 +210,7 @@ def main():
         pass
 
     finally:
-        CarlaCore.kill_all_servers()
+        kill_all_servers()
 
 if __name__ == '__main__':
 
