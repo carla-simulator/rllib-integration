@@ -164,9 +164,10 @@ class CarlaCore:
                     location = carla.Location(
                         transform[0], transform[1], transform[2]
                     )
-                    rotation = self.map.get_waypoint(location).transform.rotation
+                    waypoint = self.map.get_waypoint(location)
+                    waypoint = waypoint.previous(random.uniform(0, 10))[0]
                     transform = carla.Transform(
-                        location, rotation
+                        location, waypoint.transform.rotation
                     )
                 else:
                     assert len(transform) == 6

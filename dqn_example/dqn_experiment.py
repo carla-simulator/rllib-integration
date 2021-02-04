@@ -24,6 +24,7 @@ class DQNExperiment(BaseExperiment):
         self.max_idle = self.config["others"]["max_idle"]
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
         self.last_heading_deviation = 0
+        self.last_action = None
 
     def reset(self):
         """Called at the beginning and each time the simulation is reset"""
@@ -106,6 +107,8 @@ class DQNExperiment(BaseExperiment):
         action.reverse = action_control[3]
         action.hand_brake = action_control[4]
 
+        self.last_action = action
+
         return action
 
     def get_observation(self, sensor_data):
@@ -173,7 +176,6 @@ class DQNExperiment(BaseExperiment):
         map_ = core.map
 
         # Hero-related variables
-        hero_waypoint = find_current_waypoint(map_, hero)
         hero_location = hero.get_location()
         hero_velocity = self.get_speed(hero)
         hero_heading = hero.get_transform().get_forward_vector()
@@ -188,7 +190,7 @@ class DQNExperiment(BaseExperiment):
                             np.square(hero_location.y - self.last_location.y)))
         delta_velocity = hero_velocity - self.last_velocity
 
-        # Update varibles
+        # Update variables
         self.last_location = hero_location
         self.last_velocity = hero_velocity
 
@@ -196,36 +198,45 @@ class DQNExperiment(BaseExperiment):
         reward = 0
 
         # Reward if going forward
-        if delta_distance > 0:
-            reward += delta_distance
+        reward += delta_distance
 
         # Reward if going faster than last step
         reward += 0.05 * delta_velocity
 
+        # La duracion de estas infracciones deberia ser 2 segundos?
         # Penalize if not inside the lane
-        if not inside_lane(hero_waypoint, self.allowed_types):
+        closest_waypoint = map_.get_waypoint(
+            hero_location,
+            project_to_road=False,
+            lane_type=carla.LaneType.Any
+        )
+        if closest_waypoint is None or closest_waypoint.lane_type not in self.allowed_types:
             reward += -2
-            self.last_heading_deviation = 0
+            self.last_heading_deviation = math.pi
         else:
-            if not(hero_waypoint.is_junction):
-                wp_heading = hero_waypoint.transform.get_forward_vector()
+            if not closest_waypoint.is_junction:
+                wp_heading = closest_waypoint.transform.get_forward_vector()
                 wp_heading = [wp_heading.x, wp_heading.y]
+                angle = compute_angle(hero_heading, wp_heading)
+                self.last_heading_deviation = abs(angle)
 
-                dot_product = np.dot(hero_heading, wp_heading)
-                if dot_product > 0.7:
-                    self.last_heading_deviation = 1
-                else:
-                    self.last_heading_deviation = 0
-
-                dot_product = np.dot(hero_heading, wp_heading)
-                if dot_product < 0.0:
+                if np.dot(hero_heading, wp_heading) < 0:
+                    # We are going in the wrong direction
                     reward += -2
+
+                else:
+                    if abs(math.sin(angle)) > 0.15:
+                        if self.last_action == None:
+                            self.last_action = carla.VehicleControl()
+
+                        if self.last_action.steer * math.sin(angle) > 0:
+                            reward -= 1
             else:
-                self.last_heading_deviation = 1
+                self.last_heading_deviation = 0
 
         if self.done_falling:
-            reward += -40
+            reward += -400
         if self.done_idle:
-            reward += -100
+            reward += -1000
 
         return reward
