@@ -58,9 +58,8 @@ env_config:
     background_activity:
       n_vehicles: 0
       n_walkers: 0
-      hybrid: True
+      tm_hybrid_mode: True
     town: "Town05_Opt"
-    weather: None
     others:
       framestack: 4
       max_idle: 600

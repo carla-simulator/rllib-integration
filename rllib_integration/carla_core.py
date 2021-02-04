@@ -119,12 +119,15 @@ class CarlaCore:
 
     def setup_experiment(self, experiment_config):
         """Initialize the hero and sensors"""
+
+        # Spawn the background activity
         self.spawn_npcs(
             experiment_config["background_activity"]["n_vehicles"],
             experiment_config["background_activity"]["n_walkers"],
-            experiment_config["background_activity"]["hybrid"]
+            experiment_config["background_activity"]["tm_hybrid_mode"]
         )
 
+        # Load the map
         if self.config["enable_map_assets"]:
             map_layer = carla.MapLayer.All
         else:
@@ -135,8 +138,11 @@ class CarlaCore:
             reset_settings = False,
             map_layers = map_layer)
 
-        # self.world.set_weather(experiment_config["weather"]) TODO: do it well
         self.map = self.world.get_map()
+
+        # Choose the weather of the simulation
+        weather = getattr(carla.WeatherParameters, experiment_config["weather"])
+        self.world.set_weather(weather)
 
     def reset_hero(self, hero_config):
         """This function resets / spawns the hero vehicle and its sensors"""
