@@ -60,7 +60,7 @@ class CarlaSensor(BaseSensor):
 
         transform = carla.Transform(
             carla.Location(transform[0], transform[1], transform[2]),
-            carla.Rotation(transform[3], transform[4], transform[5])
+            carla.Rotation(transform[4], transform[5], transform[3])
         )
         self.sensor = world.spawn_actor(blueprint, transform, attach_to=self.parent)
 

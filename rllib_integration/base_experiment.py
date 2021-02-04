@@ -21,7 +21,10 @@ BASE_EXPERIMENT_CONFIG = {
             #     "attribute_name1": attribute_value1
             #     "attribute_name2": attribute_value2
             # }
-        }
+        },
+        "spawn_points": [
+            # "0,0,0,0,0,0",  # x,y,z,roll,pitch,yaw
+        ]
     },
     "background_activity": {
         "n_vehicles": 0,
