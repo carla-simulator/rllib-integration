@@ -26,11 +26,13 @@ from ray import tune
 from ray.rllib.agents.dqn import DQNTrainer
 import torch
 
-from dqn_example.dqn_experiment import DQNExperiment
 from rllib_integration.carla_env import CarlaEnv
 from rllib_integration.carla_core import kill_all_servers
-from rllib_integration.base_experiment import BaseExperiment
 
+from dqn_example.dqn_experiment import DQNExperiment
+
+# Set the experiment to EXPERIMENT_CLASS so that it is passed to the configuration
+EXPERIMENT_CLASS = DQNExperiment
 
 
 class CustomDQNTrainer(DQNTrainer):
@@ -75,36 +77,6 @@ def find_latest_checkpoint(args):
 
     return checkpoint_path
 
-def get_experiment_file(experiment_file):
-    """
-    Inspects the experiment file given to find a suitable class (one that inherits from
-    BaseExperiment). This will return the first one found (in alphabetical order)
-    """
-    # print(" ----------------------- ")
-    # module = __import__(os.path.abspath(experiment_file).replace('/', '.'))
-    # print(module)
-    # print(" ----------------------- ")
-
-    # Get their module name, add it to the sys path and import it
-    # current_file = os.path.dirname(os.path.abspath(__file__))
-    # experiment_module = importlib.import_module(experiment_file.replace('/', '.'))
-    # print(experiment_module)
-
-    # Get their module
-    # experiment_module_name = experiment_file.split('.')[0]
-    # sys.path.insert(0, os.path.dirname(experiment_file))
-    experiment_module = importlib.import_module(module)
-
-    # Check for a specific class (see print below) among all the modules of the file
-    for _, member_type in inspect.getmembers(experiment_module, inspect.isclass):
-        if BaseExperiment in member_type.__bases__:
-            print(member_type)
-            break
-            return member_type
-
-    print("Stopping the execution, couldn't find any class with '{}' as it's parent".format(BaseExperiment))
-    sys.exit(-1)
-
 def manage_training_directory(args):
     """
     Depending of the arguments, makes sure that the directory is correctly setup
@@ -129,18 +101,22 @@ def manage_training_directory(args):
 
     return training_directory
 
+def parse_config(args):
+    """
+    Parses the .yaml configuration file into a readable dictionary
+    """
+    with open(args.configuration_file) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+        config["env"] = CarlaEnv
+        config["env_config"]["experiment"]["type"] = EXPERIMENT_CLASS
+
+    return config
+
 def run(args):
     try:
         checkpoint = False
         if args.restore:
             checkpoint = find_latest_checkpoint(args)
-
-        # load the experiment configuration
-        with open(args.configuration_file) as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-            config["env"] = CarlaEnv
-            # config["env_config"]["experiment"]["type"] = get_experiment_file(args.experiment)
-            config["env_config"]["experiment"]["type"] = DQNExperiment
 
         while True:
             kill_all_servers()
@@ -153,7 +129,7 @@ def run(args):
                 checkpoint_freq=1,
                 checkpoint_at_end=True,
                 restore=checkpoint,
-                config=config
+                config=args.config
             )
             ray.shutdown()
             checkpoint = find_latest_checkpoint(args)
@@ -167,8 +143,6 @@ def main():
     argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument("configuration_file",
                            help="Configuration file (*.yaml)")
-    # argparser.add_argument("experiment",
-    #                        help="Experiment file (*.py)")
     argparser.add_argument("-d", "--directory",
                            metavar='D',
                            default=os.path.expanduser("~") + "/ray_results/carla_rllib",
@@ -188,7 +162,7 @@ def main():
 
     args = argparser.parse_args()
     args.training_directory = manage_training_directory(args)
-
+    args.config = parse_config(args)
     run(args)
 
 
