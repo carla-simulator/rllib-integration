@@ -22,7 +22,7 @@ class CarlaEnv(gym.Env):
     def __init__(self, config):
         self.config = config
 
-        self.experiment = self.config["experiment"]["type"](self.config["experiment"]) # TODO:
+        self.experiment = self.config["experiment"]["type"](self.config["experiment"])
         self.action_space = self.experiment.get_action_space()
         self.observation_space = self.experiment.get_observation_space()
 
