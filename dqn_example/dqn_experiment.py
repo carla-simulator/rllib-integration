@@ -33,7 +33,7 @@ class DQNExperiment(BaseExperiment):
         self.done_falling = False
 
         # hero variables
-        self.last_location = carla.Location()
+        self.last_location = None
         self.last_velocity = 0
 
         # Sensor stack
@@ -147,6 +147,8 @@ class DQNExperiment(BaseExperiment):
         self.done_idle = self.max_idle < self.time_idle
         if self.get_speed(hero) > 1.0:
             self.time_idle = 0
+        else:
+            self.time_idle += 1
         self.done_falling = hero.get_location().z < -0.5
         return self.done_idle or self.done_falling
 
@@ -179,6 +181,10 @@ class DQNExperiment(BaseExperiment):
             hero_waypoint.transform.location.y - hero_location.y
         ])
 
+        # Initialize last location
+        if self.last_location == None:
+            self.last_locartion = hero_location
+
         # Compute deltas
         delta_distance = float(np.sqrt(np.square(hero_location.x - self.last_location.x) + \
                             np.square(hero_location.y - self.last_location.y)))
@@ -195,23 +201,21 @@ class DQNExperiment(BaseExperiment):
 
         # Reward if going forward
         if delta_distance > 0:
-            reward += 10*delta_distance
+            reward += delta_distance
 
         # Reward if going faster than last step
         reward += 0.05 * delta_velocity
 
         # Penalize if not inside the lane
         if not inside_lane(hero_waypoint, self.allowed_types):
-            reward += -0.5
+            reward += -2
 
         if dot_product < 0.0 and not(hero_waypoint.is_junction):
-            reward += -0.5
+            reward += -2
 
         if self.done_falling:
-            reward += -3
+            reward += -40
         if self.done_idle:
-            reward += -1
-
-        self.time_idle += 1
+            reward += -100
 
         return reward

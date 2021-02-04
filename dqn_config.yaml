@@ -41,7 +41,7 @@ env_config:
     resolution_x: 600
     resolution_y: 600
     quality_level: "Low"
-    enable_map_assets: False
+    enable_map_assets: True
     enable_rendering: True
     show_display: True
 
@@ -62,7 +62,6 @@ env_config:
         "-258.58871094,-3.82127594,2",
         "-188.099101566,-101.55841797,2",
         "-120.81304688,-127.37759766,2",
-        "48.17355957,-102.92279297,2",
         "143.90660156,1.53764084,2",
         "-51.00605469,112.90189453,2",
         "-127.00455078,136.63408203,2",
