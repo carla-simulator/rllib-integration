@@ -4,7 +4,7 @@
 "horizon": 1000
 "num_workers": 1
 "num_gpus_per_worker": 1
-"num_cpus_per_worker": 5
+"num_cpus_per_worker": 8
 "batch_mode": "complete_episodes"
 "rollout_fragment_length": 4
 "horizon": 6400
@@ -22,13 +22,13 @@
 "model": {
   "dim": 300,
   "conv_filters": [
-    [ 16, [ 5, 5 ], 4 ],
-    [ 32, [ 5, 5 ], 2 ],
-    [ 32, [ 5, 5 ], 2 ],
-    [ 64, [ 5, 5 ], 1 ],
-    [ 64, [ 5, 5 ], 2 ],
-    [ 128, [ 5, 5 ], 2 ],
-    [ 512, [ 5, 5 ], 1 ],
+    [16, [5, 5], 4],
+    [32, [5, 5], 2],
+    [32, [5, 5], 2],
+    [64, [5, 5], 1],
+    [64, [5, 5], 2],
+    [128, [5, 5], 2],
+    [512, [5, 5], 1],
   ]
 }
 
@@ -41,23 +41,26 @@ env_config:
     resolution_x: 600
     resolution_y: 600
     quality_level: "Low"
-    subleveling: True
-    no_rendering: True
-
-  RAY: True
-  DEBUG_MODE: False
+    enable_map_assets: False
+    enable_rendering: True
+    show_display: True
 
   experiment:
-    hero_blueprint: "vehicle.lincoln.mkz2017"
+    hero:
+      blueprint: "vehicle.lincoln.mkz2017"
+      sensors:
+        collision:
+          type: "sensor.other.collision"
+        birdview:
+          type: "sensor.birdview"
+          size: 300
+          radius: 15
+    background_activity:
+      n_vehicles: 0
+      n_walkers: 0
+      hybrid: True
     town: "Town05_Opt"
-    n_vehicles: 0
-    n_walkers: 0
-    sensors:
-      collision:
-        type: "sensor.other.collision"
-      lidar:
-        type: "sensor.lidar.ray_cast"
-      birdview:
-        type: "sensor.birdview"
-        size: 300
-        radius: 15
+    weather: None
+    others:
+      framestack: 4
+      max_idle: 600

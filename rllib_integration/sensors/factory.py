@@ -43,5 +43,4 @@ class SensorFactory(object):
         else:
             raise RuntimeError("Sensor of type {} not supported".format(type_))
 
-        print("Spawned sensor {}.".format(name))
         return sensor

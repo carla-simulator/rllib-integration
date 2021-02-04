@@ -8,6 +8,7 @@
 
 import cv2
 import numpy as np
+import collections.abc
 
 
 def post_process_image(image, normalized=True, grayscale=True):
@@ -16,7 +17,7 @@ def post_process_image(image, normalized=True, grayscale=True):
     :param image:
     :param normalized:
     :param grayscale
-    :return: normalized image
+    :return: image
     """
     if isinstance(image, list):
         image = image[0]
@@ -28,3 +29,16 @@ def post_process_image(image, normalized=True, grayscale=True):
         return (image.astype(np.float32) - 128) / 128
     else:
         return image.astype(np.uint8)
+
+def join_dicts(d, u):
+    """
+    Recursively updates a dictionary
+    """
+    result = d.copy()
+
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            result[k] = join_dicts(d.get(k, {}), v)
+        else:
+            result[k] = v
+    return result

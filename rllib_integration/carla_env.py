@@ -22,42 +22,33 @@ class CarlaEnv(gym.Env):
     def __init__(self, config):
         self.config = config
 
-        self.experiment = self.config["experiment"]["type"](self.config["experiment"])
+        self.experiment = self.config["experiment"]["type"](self.config["experiment"]) # TODO:
         self.action_space = self.experiment.get_action_space()
         self.observation_space = self.experiment.get_observation_space()
-        self.experiment_config = self.experiment.get_experiment_config()
 
-        self.core = CarlaCore(self.config, self.experiment_config, self.config["carla"])
-
-        self.world = self.core.get_core_world()
-        self.map = self.world.get_map()
-        self.spawn_points = self.map.get_spawn_points()
+        self.core = CarlaCore(self.config['carla'])
+        self.core.setup_experiment(self.experiment.config)
 
         self.reset()
 
     def reset(self):
-        self.core.reset_sensors(self.experiment_config["sensors"])
 
-        self.experiment.spawn_hero(self.world, self.spawn_points, autopilot=False)
+        # Reset sensors hero and experiment
+        self.hero = self.core.reset_hero(self.experiment.config["hero"])
+        self.experiment.reset()
 
-        self.core.setup_sensors(
-            self.experiment.experiment_config["sensors"],
-            self.experiment.get_hero(),
-            self.world.get_settings().synchronous_mode,
-        )
+        # Tick once
+        sensor_data = self.core.tick(None)
 
-        self.experiment.initialize_reward(self.core)
-        self.experiment.set_server_view(self.core)
-        self.experiment.tick(self.core, self.world, action=None)
-        obs, info = self.experiment.get_observation(self.core)
-        obs = self.experiment.process_observation(self.core, obs)
-        return obs
+        observation, _ = self.experiment.get_observation(sensor_data)
+        return observation
 
     def step(self, action):
-        self.experiment.tick(self.core, self.world, action)
-        observation, info = self.experiment.get_observation(self.core)
-        observation = self.experiment.process_observation(self.core, observation)
-        reward = self.experiment.compute_reward(self.core,observation, self.map)
-        done = self.experiment.get_done_status()
+        control = self.experiment.compute_action(action)
+        sensor_data = self.core.tick(control)
+
+        observation, info = self.experiment.get_observation(sensor_data)
+        reward = self.experiment.compute_reward(observation, self.core)
+        done = self.experiment.get_done_status(observation, self.core)
 
         return observation, reward, done, info
