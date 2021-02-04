@@ -148,7 +148,29 @@ class CarlaCore:
         self.world.tick()
 
         # Part 2: Spawn the ego vehicle
-        spawn_points = self.map.get_spawn_points()
+        user_spawn_points = hero_config["spawn_points"]
+        if user_spawn_points:
+            spawn_points = []
+            for transform in user_spawn_points:
+
+                transform = [float(x) for x in transform.split(",")]
+                if len(transform) == 3:
+                    location = carla.Location(
+                        transform[0], transform[1], transform[2]
+                    )
+                    rotation = self.map.get_waypoint(location).transform.rotation
+                    transform = carla.Transform(
+                        location, rotation
+                    )
+                else:
+                    assert len(transform) == 6
+                    transform = carla.Transform(
+                        carla.Location(transform[0], transform[1], transform[2]),
+                        carla.Rotation(transform[4], transform[5], transform[3])
+                    )
+                spawn_points.append(transform)
+        else:
+            spawn_points = self.map.get_spawn_points()
 
         self.hero_blueprints = self.world.get_blueprint_library().find(hero_config['blueprint'])
         self.hero_blueprints.set_attribute("role_name", "hero")
