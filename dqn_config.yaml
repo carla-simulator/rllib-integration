@@ -5,7 +5,6 @@
 "num_workers": 15
 "num_gpus_per_worker": 0.25
 "num_cpus_per_worker": 3
-"batch_mode": "complete_episodes"
 "rollout_fragment_length": 16
 "horizon": 6400
 "timesteps_per_iteration": 15000
