@@ -29,10 +29,10 @@ BASE_EXPERIMENT_CONFIG = {
     "background_activity": {
         "n_vehicles": 0,
         "n_walkers": 0,
-        "hybrid": True
+        "tm_hybrid_mode": True
     },
     "town": "Town05_Opt",
-    "weather": carla.WeatherParameters.ClearNoon,
+    "weather": 'ClearNoon'
 }
 
 class BaseExperiment(object):
