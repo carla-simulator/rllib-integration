@@ -120,7 +120,7 @@ class DQNExperiment(BaseExperiment):
         as well as a variable with additional information about such observation.
         The information variable can be empty
         """
-        image = post_process_image(sensor_data['birdview'], normalized = False, grayscale = False)
+        image = post_process_image(sensor_data['birdview'][1], normalized = False, grayscale = False)
 
         if self.prev_image_0 is None:
             self.prev_image_0 = image
