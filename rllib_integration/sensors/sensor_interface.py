@@ -8,8 +8,11 @@
 
 import queue
 
-
 class SensorInterface(object):
+    """
+    Class used to handle all the sensor data management
+    """
+
     def __init__(self):
         self._sensors = {}  # {name: Sensor object}
         self._data_buffers = queue.Queue()
@@ -25,12 +28,14 @@ class SensorInterface(object):
         return sensors
 
     def register(self, name, sensor):
+        """Adds a specific sensor to the class"""
         if sensor.is_event_sensor():
             self._event_sensors[name] = sensor
         else:
             self._sensors[name] = sensor
 
     def get_data(self):
+        """Returns the data of all the registered sensors as a dictionary {sensor_name: sensor_data}"""
         try:
             data_dict = {}
             while len(data_dict.keys()) < len(self._sensors.keys()):

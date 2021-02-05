@@ -35,6 +35,7 @@ BASE_CORE_CONFIG = {
 
 
 def is_used(port):
+    """Checks whether or not a port is used"""
     return port in [conn.laddr.port for conn in psutil.net_connections()]
 
 def kill_all_servers():
@@ -45,6 +46,10 @@ def kill_all_servers():
 
 
 class CarlaCore:
+    """
+    Class responsible of handling all the different CARLA functionalities, such as server-client connecting,
+    actor spawning and getting the sensors data.
+    """
     def __init__(self, config={}):
         """Initialize the server and client"""
         self.client = None
@@ -220,23 +225,15 @@ class CarlaCore:
 
         return self.hero
 
-    def spawn_npcs(self, n_vehicles, n_walkers, hybrid=False, seed=None): #TODO: remake + seed
-        """
-        Spawns vehicles and walkers, also setting up the Traffic Manager and its parameters
-
-        :param n_vehicles: Number of vehicles
-        :param n_walkers: Number of walkers
-        :param hybrid: Activates hybrid physics mode
-        :param seed: Activates deterministic mode
-        :return: None
-        """
+    def spawn_npcs(self, n_vehicles, n_walkers, tm_hybrid_mode=False, seed=None): #TODO: remake + seed
+        """Spawns vehicles and walkers, also setting up the Traffic Manager and its parameters"""
 
         tm_port = self.server_port//10 + self.server_port%10
         while is_used(tm_port):
             print("Is using the TM port: " + str(tm_port))
             tm_port+=1
         traffic_manager = self.client.get_trafficmanager(tm_port)
-        if hybrid:
+        if tm_hybrid_mode:
             traffic_manager.set_hybrid_physics_mode(True)
         if seed is not None:
             traffic_manager.set_random_device_seed(seed)
@@ -260,7 +257,6 @@ class CarlaCore:
             logging.warning(msg, n_vehicles, number_of_spawn_points)
             n_vehicles = number_of_spawn_points
 
-        # @todo cannot import these directly.
         SpawnActor = carla.command.SpawnActor
         SetAutopilot = carla.command.SetAutopilot
         FutureActor = carla.command.FutureActor
@@ -363,9 +359,11 @@ class CarlaCore:
         self.world.tick()
 
     def tick(self, control):
+        """Performs one tick of the simulation, moving all actors, and getting the sensor data"""
+
         # Move hero vehicle
         if control is not None:
-            self.apply_control(control)
+            self.apply_hero_control(control)
 
         # Tick once the simulation
         self.world.tick()
@@ -378,7 +376,7 @@ class CarlaCore:
         return self.get_sensor_data()
 
     def set_spectator_camera_view(self):
-        """This position the spectator as a 3rd person view of the hero vehicle"""
+        """This positions the spectator as a 3rd person view of the hero vehicle"""
         transform = self.hero.get_transform()
 
         # Get the camera position
@@ -400,7 +398,8 @@ class CarlaCore:
             )
         )
 
-    def apply_control(self, control):
+    def apply_hero_control(self, control):
+        """Applies the control calcualted at the experiment to the hero"""
         self.hero.apply_control(control)
 
     def get_sensor_data(self):
