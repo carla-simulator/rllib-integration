@@ -206,6 +206,7 @@ class CarlaCore:
             next_spawn_point = spawn_points[i % len(spawn_points)]
             self.hero = self.world.try_spawn_actor(self.hero_blueprints, next_spawn_point)
             if self.hero is not None:
+                print("Hero spawned!")
                 break
             else:
                 print("Could not spawn hero, changing spawn point")

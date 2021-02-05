@@ -22,6 +22,7 @@ class DQNExperiment(BaseExperiment):
 
         self.frame_stack = self.config["others"]["framestack"]
         self.max_idle = self.config["others"]["max_idle"]
+        self.max_time = self.config["others"]["max_time"]
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
         self.last_heading_deviation = 0
         self.last_action = None
@@ -31,8 +32,10 @@ class DQNExperiment(BaseExperiment):
 
         # Ending variables
         self.time_idle = 0
+        self.time_episode = 0
         self.done_idle = False
         self.done_falling = False
+        self.done_max_time = False
 
         # hero variables
         self.last_location = None
@@ -155,8 +158,10 @@ class DQNExperiment(BaseExperiment):
             self.time_idle = 0
         else:
             self.time_idle += 1
+        self.time_episode += 1
+        self.done_max_time = self.max_time < self.time_episode
         self.done_falling = hero.get_location().z < -0.5
-        return self.done_idle or self.done_falling
+        return self.done_idle or self.done_falling or self.done_max_time
 
     def compute_reward(self, observation, core):
         """Computes the reward"""
@@ -235,8 +240,12 @@ class DQNExperiment(BaseExperiment):
                 self.last_heading_deviation = 0
 
         if self.done_falling:
-            reward += -400
+            reward += -40
         if self.done_idle:
-            reward += -1000
+            print("Done idle")
+            reward += -100
+        if self.done_max_time:
+            print("Done max time")
+            reward += 100
 
         return reward
