@@ -75,17 +75,27 @@ class CarlaCore:
             uses_server_port = is_used(self.server_port)
             uses_stream_port = is_used(self.server_port+1)
 
-        server_command = [
-            "DISPLAY= " if not self.config["show_display"] else "",
-            "{}/CarlaUE4.sh".format(os.environ["CARLA_ROOT"]),
-            "-windowed",
-            "-ResX={}".format(self.config["resolution_x"]),
-            "-ResY={}".format(self.config["resolution_y"]),
+        if self.config["show_display"]:
+            server_command = [
+                "{}/CarlaUE4.sh".format(os.environ["CARLA_ROOT"]),
+                "-windowed",
+                "-ResX={}".format(self.config["resolution_x"]),
+                "-ResY={}".format(self.config["resolution_y"]),
+            ]
+        else:
+            server_command = [
+                "DISPLAY= ",
+                "{}/CarlaUE4.sh".format(os.environ["CARLA_ROOT"]),
+                "-opengl"  # no-display isn't supported for Unreal 4.24 with vulkan
+            ]
+
+        server_command += [
             "--carla-rpc-port={}".format(self.server_port),
             "-quality-level={}".format(self.config["quality_level"])
         ]
 
         server_command_text = " ".join(map(str, server_command))
+        print(server_command_text)
         server_process = subprocess.Popen(
             server_command_text,
             shell=True,
