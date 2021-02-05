@@ -221,7 +221,7 @@ class CarlaCore:
             sensor = SensorFactory.spawn(name, attributes, self.sensor_interface, self.hero)
 
         # Not needed anymore. This tick will happen when calling CarlaCore.tick()
-        #self.world.tick()
+        # self.world.tick()
 
         return self.hero
 

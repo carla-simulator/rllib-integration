@@ -16,7 +16,7 @@ from threading import Thread
 
 import carla
 
-from rllib_integration.sensors.sensor import BaseSensor
+from rllib_integration.sensors.sensor import PseudoSensor
 
 
 # ==============================================================================
@@ -653,7 +653,7 @@ def threaded(fn):
         return thread
     return wrapper
 
-class BirdviewManager(BaseSensor):
+class BirdviewManager(PseudoSensor):
     """
     This class is responsible of creating a 'birdview' pseudo-sensor, which is a simplified
     version of CARLA's non rendering mode.

@@ -41,6 +41,8 @@ class SensorFactory(object):
             sensor = LaneInvasion(name, attributes, interface, parent)
         elif type_ == "sensor.other.collision":
             sensor = Collision(name, attributes, interface, parent)
+        elif type_ == "sensor.other.obstacle":
+            sensor = Obstacle(name, attributes, interface, parent)
         elif type_ == "sensor.birdview":
             sensor = BirdviewManager(name, attributes, interface, parent)
         else:
