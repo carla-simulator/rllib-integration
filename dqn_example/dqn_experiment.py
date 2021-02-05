@@ -21,8 +21,8 @@ class DQNExperiment(BaseExperiment):
         super().__init__(config)  # Creates a self.config with the experiment configuration
 
         self.frame_stack = self.config["others"]["framestack"]
-        self.max_idle = self.config["others"]["max_idle"]
-        self.max_time = self.config["others"]["max_time"]
+        self.max_time_idle = self.config["others"]["max_time_idle"]
+        self.max_time_episode = self.config["others"]["max_time_episode"]
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
         self.last_heading_deviation = 0
         self.last_action = None
@@ -33,9 +33,9 @@ class DQNExperiment(BaseExperiment):
         # Ending variables
         self.time_idle = 0
         self.time_episode = 0
-        self.done_idle = False
+        self.done_time_idle = False
         self.done_falling = False
-        self.done_max_time = False
+        self.done_time_episode = False
 
         # hero variables
         self.last_location = None
@@ -153,15 +153,15 @@ class DQNExperiment(BaseExperiment):
     def get_done_status(self, observation, core):
         """Returns whether or not the experiment has to end"""
         hero = core.hero
-        self.done_idle = self.max_idle < self.time_idle
+        self.done_time_idle = self.max_time_idle < self.time_idle
         if self.get_speed(hero) > 1.0:
             self.time_idle = 0
         else:
             self.time_idle += 1
         self.time_episode += 1
-        self.done_max_time = self.max_time < self.time_episode
+        self.done_time_episode = self.max_time_episode < self.time_episode
         self.done_falling = hero.get_location().z < -0.5
-        return self.done_idle or self.done_falling or self.done_max_time
+        return self.done_time_idle or self.done_falling or self.done_time_episode
 
     def compute_reward(self, observation, core):
         """Computes the reward"""
@@ -241,10 +241,10 @@ class DQNExperiment(BaseExperiment):
 
         if self.done_falling:
             reward += -40
-        if self.done_idle:
+        if self.done_time_idle:
             print("Done idle")
             reward += -100
-        if self.done_max_time:
+        if self.done_time_episode:
             print("Done max time")
             reward += 100
 
