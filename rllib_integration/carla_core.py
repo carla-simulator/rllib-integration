@@ -147,9 +147,8 @@ class CarlaCore:
     def reset_hero(self, hero_config):
         """This function resets / spawns the hero vehicle and its sensors"""
 
-        # Part 1: destroy all sensors (if)
-        for sensor in self.sensor_interface.sensors.values():
-            sensor.destroy()
+        # Part 1: destroy all sensors (if necessary)
+        self.sensor_interface.destroy()
 
         self.world.tick()
 
@@ -206,7 +205,8 @@ class CarlaCore:
         for name, attributes in hero_config["sensors"].items():
             sensor = SensorFactory.spawn(name, attributes, self.sensor_interface, self.hero)
 
-        self.world.tick()
+        # Not needed anymore. This tick will happen when calling CarlaCore.tick()
+        #self.world.tick()
 
         return self.hero
 
@@ -395,4 +395,10 @@ class CarlaCore:
 
     def get_sensor_data(self):
         """Returns the data sent by the different sensors at this tick"""
-        return self.sensor_interface.get_data()
+        sensor_data = self.sensor_interface.get_data()
+        # print("---------")
+        # world_frame = self.world.get_snapshot().frame
+        # print("World frame: {}".format(world_frame))
+        # for name, data in sensor_data.items():
+        #     print("{}: {}".format(name, data[0]))
+        return sensor_data

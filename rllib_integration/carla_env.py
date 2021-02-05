@@ -32,7 +32,6 @@ class CarlaEnv(gym.Env):
         self.reset()
 
     def reset(self):
-
         # Reset sensors hero and experiment
         self.hero = self.core.reset_hero(self.experiment.config["hero"])
         self.experiment.reset()
@@ -48,7 +47,7 @@ class CarlaEnv(gym.Env):
         sensor_data = self.core.tick(control)
 
         observation, info = self.experiment.get_observation(sensor_data)
-        reward = self.experiment.compute_reward(observation, self.core)
         done = self.experiment.get_done_status(observation, self.core)
+        reward = self.experiment.compute_reward(observation, self.core)
 
         return observation, reward, done, info

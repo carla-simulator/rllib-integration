@@ -31,11 +31,14 @@ class BaseSensor(object):
     def parse(self):
         raise NotImplementedError
 
-    def callback(self, data):
+    def callback(self, data, frame=None):
+        if frame is None:
+            frame = data.frame
+
         if not self.is_event_sensor():
-            self.interface._data_buffers.put((self.name, self.parse(data)))
+            self.interface._data_buffers.put((self.name, frame, self.parse(data)))
         else:
-           self.interface._event_data_buffers.put((self.name, self.parse(data)))
+           self.interface._event_data_buffers.put((self.name, frame, self.parse(data)))
 
     def destroy(self):
         raise NotImplementedError
