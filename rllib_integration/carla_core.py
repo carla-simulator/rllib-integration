@@ -179,7 +179,7 @@ class CarlaCore:
                         transform[0], transform[1], transform[2]
                     )
                     waypoint = self.map.get_waypoint(location)
-                    waypoint = waypoint.previous(random.uniform(0, 10))[0]
+                    waypoint = waypoint.previous(random.uniform(0, 5))[0]
                     transform = carla.Transform(
                         location, waypoint.transform.rotation
                     )

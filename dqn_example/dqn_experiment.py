@@ -199,14 +199,12 @@ class DQNExperiment(BaseExperiment):
         self.last_location = hero_location
         self.last_velocity = hero_velocity
 
-        # Calculate reward
-        reward = 0
-
         # Reward if going forward
-        reward += delta_distance
+        reward = delta_distance
 
         # Reward if going faster than last step
-        reward += 0.05 * delta_velocity
+        if hero_velocity < 20.0:
+            reward += 0.05 * delta_velocity
 
         # La duracion de estas infracciones deberia ser 2 segundos?
         # Penalize if not inside the lane
@@ -216,7 +214,7 @@ class DQNExperiment(BaseExperiment):
             lane_type=carla.LaneType.Any
         )
         if closest_waypoint is None or closest_waypoint.lane_type not in self.allowed_types:
-            reward += -2
+            reward += -0.5
             self.last_heading_deviation = math.pi
         else:
             if not closest_waypoint.is_junction:
@@ -227,15 +225,15 @@ class DQNExperiment(BaseExperiment):
 
                 if np.dot(hero_heading, wp_heading) < 0:
                     # We are going in the wrong direction
-                    reward += -2
+                    reward += -0.5
 
                 else:
-                    if abs(math.sin(angle)) > 0.15:
+                    if abs(math.sin(angle)) > 0.4:
                         if self.last_action == None:
                             self.last_action = carla.VehicleControl()
 
-                        if self.last_action.steer * math.sin(angle) > 0:
-                            reward -= 1
+                        if self.last_action.steer * math.sin(angle) >= 0:
+                            reward -= 0.05
             else:
                 self.last_heading_deviation = 0
 
