@@ -13,6 +13,7 @@ import datetime
 import functools
 import logging
 import os
+import shutil
 import stat
 import sys
 import time
@@ -40,7 +41,7 @@ def create_key_pair(key_name, private_key_file_name=None):
         key_pair = ec2.create_key_pair(KeyName=key_name)
         logging.info("Created key %s.", key_name)
         if private_key_file_name is None:
-            private_key_file_name = os.path.join("keys", key_name + ".pem")
+            private_key_file_name = os.path.join(_get_folder_keys(), key_name + ".pem")
         with open(private_key_file_name, 'w') as pk_file:
             pk_file.write(key_pair.key_material)
         os.chmod(private_key_file_name, stat.S_IREAD)
@@ -131,6 +132,14 @@ def get_instance(instance_id):
     assert len(instances) == 1
     return instances[0]
 
+
+def get_info(instance, field):
+    if field == "public_ip":
+        return instance.public_ip_address
+    elif field == "pem_file":
+        return _get_key_filename(instance)
+    else:
+        return None
 
 def run_instance(name, image_id, instance_type, key_name, security_group_name, volume_size=10, user_data=""):
     """
@@ -233,7 +242,7 @@ def create_image(name,
 
     for script in installation_scripts:
         logging.info("Executing installation script %s", os.path.basename(script))
-        exec_script(instance, script, rsync=True)
+        exec_script(instance, script)
 
     #logging.info("Creating image from EC2 instance %s. This may take a while...", instance.id)
     #image = instance.create_image(Name=name)
@@ -251,15 +260,20 @@ def create_image(name,
     return instance
 
 
-def exec_script(instance, script, args="", rsync=False):
+def exec_script(instance, script, args="", rsync_folder=False):
     logging.info("Executing script %s in EC2 instance %s", os.path.basename(script), instance.id)
+    command = ""
     if not os.path.isfile(script):
         logging.error("The provided script '%s' is not a file.", script)
         return
-    if rsync:
+    if rsync_folder:
+        put(instance, os.path.dirname(script))
+        folder = os.path.basename(os.path.dirname(script))
+        command += " cd {} && ".format(folder)
+    else:
         put(instance, script)
-    # TODO: Execute scripts in concrete folders.
-    exec_command(instance, "./{} {}".format(os.path.basename(script), args))
+    command += "./{} {}".format(os.path.basename(script), args)
+    exec_command(instance, command)
 
 
 def exec_command(instance, command):
@@ -270,17 +284,22 @@ def exec_command(instance, command):
         print(line, end="")
 
 
-def put(instance, source, target=".", exclude=(".git", "keys", "__pycache__")):
+def put(instance, source, target=".", exclude=(".git", "keys", "__pycache__", "map_cache")):
     logging.info("Copying %s into EC2 instance %s", source, instance.id)
     scp_client = _get_scp_client(instance)
     if os.path.isdir(source):
+        folder = os.path.basename(source)
+        target = os.path.join(target, folder)
+        exec_command(instance, "mkdir -p {}".format(target))
+
         base, dirs, files = next(os.walk(source))
         dirs = [os.path.join(base, dir_) for dir_ in dirs if dir_ not in exclude]
         files = [os.path.join(base, file) for file in files]
-        scp_client.put(dirs, remote_path=target, recursive=True)
+        for dir_ in dirs:
+            remote_path = os.path.join(target, os.path.basename(dir_))
+            scp_client.put(dir_, remote_path=remote_path, recursive=True)
         scp_client.put(files, remote_path=target)
     else:
-        pass
         scp_client.put(files=source, remote_path=target)
 
 
@@ -294,11 +313,19 @@ def _get_username(instance):
     return "ubuntu"
 
 
+def _get_folder_keys():
+    return os.path.join(os.path.expanduser("~"), "rllib_keys") 
+
+
 def _get_key_filename(instance):
-    path = os.path.dirname(os.path.realpath(__file__))
-    pem_file = os.path.join(path, "..", "keys", instance.key_name + ".pem")
+    folder = _get_folder_keys()
+    pem_file = os.path.join(folder, instance.key_name + ".pem")
     if not os.path.isfile(pem_file):
-        pem_file = input("pem file for key {} not found. Please, provide the appropriate file: ".format(instance.key_name))
+        user_pem_file = input("pem file for key {} not found. Please, provide the appropriate file: ".format(instance.key_name))
+        if not os.path.exists(folder):
+            os.mkdir(folder) 
+        shutil.copyfile(user_pem_file, pem_file)
+        os.chmod(pem_file, stat.S_IREAD)
     return pem_file
 
 

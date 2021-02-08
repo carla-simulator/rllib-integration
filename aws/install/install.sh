@@ -21,8 +21,10 @@ pip3 install pygame paramiko scp ray[rllib]
 # ==================================================================================================
 # -- Env variables ---------------------------------------------------------------------------------
 # ==================================================================================================
-echo "export CARLA_ROOT=~/CARLA_0.9.11" >> ~/.bashrc
-echo "source activate pytorch_latest_p37" >> ~/.bashrc
-echo 'export PYTHONPATH=""' >> ~/.bashrc
-echo 'export PYTHONPATH=$PYTHONPATH:"${CARLA_ROOT}/PythonAPI/carla/dist/$(ls ${CARLA_ROOT}/PythonAPI/carla/dist | grep py3.)"' >> ~/.bashrc
-echo 'export PYTHONPATH=$PYTHONPATH:"${CARLA_ROOT}/PythonAPI/carla"' >> ~/.bashrc
+echo "export CARLA_ROOT=~/CARLA_0.9.11" >> ~/custom_env.sh
+echo "source activate pytorch_latest_p37" >> ~/custom_env.sh
+echo 'export PYTHONPATH=""' >> ~/custom_env.sh
+echo 'export PYTHONPATH=$PYTHONPATH:"${CARLA_ROOT}/PythonAPI/carla/dist/$(ls ${CARLA_ROOT}/PythonAPI/carla/dist | grep py3.)"' >> ~/custom_env.sh
+echo 'export PYTHONPATH=$PYTHONPATH:"${CARLA_ROOT}/PythonAPI/carla"' >> ~/custom_env.sh
+
+echo "source ~/custom_env.sh" >> ~/.bashrc
