@@ -128,6 +128,9 @@ class CameraDVS(CarlaSensor):
     def __init__(self, name, attributes, interface, parent):
         super().__init__(name, attributes, interface, parent)
 
+    def is_event_sensor(self):
+        return True
+
     def parse(self, sensor_data):
         """Parses the DVSEvents into an RGB image"""
         # sensor_data: [x, y, t, polarity]
@@ -225,7 +228,14 @@ class LaneInvasion(CarlaSensor):
 
 class Collision(CarlaSensor):
     def __init__(self, name, attributes, interface, parent):
+        self._last_event_frame = 0
         super().__init__(name, attributes, interface, parent)
+
+    def callback(self, data):
+        # The collision sensor can have multiple callbacks per tick. Get only the first one
+        if self._last_event_frame != data.frame:
+            self._last_event_frame = data.frame
+            self.update_sensor(data, data.frame)
 
     def is_event_sensor(self):
         return True

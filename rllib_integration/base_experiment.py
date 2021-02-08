@@ -29,7 +29,8 @@ BASE_EXPERIMENT_CONFIG = {
     "background_activity": {
         "n_vehicles": 0,
         "n_walkers": 0,
-        "tm_hybrid_mode": True
+        "tm_hybrid_mode": True,
+        "seed": None
     },
     "town": "Town05_Opt",
     "weather": 'ClearNoon'
