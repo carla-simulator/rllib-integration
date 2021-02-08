@@ -9,8 +9,6 @@
 You can visualize experiment results in ~/ray_results using TensorBoard.
 """
 
-from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
 
 import sys
@@ -18,13 +16,14 @@ import argparse
 import os
 import shutil
 import yaml
-import importlib
-import inspect
 
 import ray
 from ray import tune
+from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.agents.dqn import DQNTrainer
+
 import torch
+import numpy as np
 
 from rllib_integration.carla_env import CarlaEnv
 from rllib_integration.carla_core import kill_all_servers
@@ -33,6 +32,25 @@ from dqn_example.dqn_experiment import DQNExperiment
 
 # Set the experiment to EXPERIMENT_CLASS so that it is passed to the configuration
 EXPERIMENT_CLASS = DQNExperiment
+
+
+class DQNCallbacks(DefaultCallbacks):
+
+    def on_episode_start(self, worker, base_env, policies, episode, **kwargs):
+        episode.user_data["heading_deviation"] = []
+
+    def on_episode_step(self, worker, base_env, episode, **kwargs):
+        heading_deviation = worker.env.experiment.last_heading_deviation
+        if heading_deviation > 0:
+            episode.user_data["heading_deviation"].append(heading_deviation)
+
+    def on_episode_end(self, worker, base_env, policies, episode, **kwargs):
+        heading_deviation = episode.user_data["heading_deviation"]
+        if len(heading_deviation) > 0:
+            heading_deviation = np.mean(episode.user_data["heading_deviation"])
+        else:
+            heading_deviation = 0
+        episode.custom_metrics["heading_deviation"] = heading_deviation
 
 
 class CustomDQNTrainer(DQNTrainer):
@@ -109,6 +127,7 @@ def parse_config(args):
         config = yaml.load(f, Loader=yaml.FullLoader)
         config["env"] = CarlaEnv
         config["env_config"]["experiment"]["type"] = EXPERIMENT_CLASS
+        config["callbacks"] = DQNCallbacks
 
     return config
 

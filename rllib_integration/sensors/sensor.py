@@ -5,6 +5,9 @@
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
+"""
+Here are defined all the CARLA sensors
+"""
 
 import copy
 import math
@@ -31,11 +34,14 @@ class BaseSensor(object):
     def parse(self):
         raise NotImplementedError
 
-    def callback(self, data):
+    def update_sensor(self, data, frame):
         if not self.is_event_sensor():
-            self.interface._data_buffers.put((self.name, self.parse(data)))
+            self.interface._data_buffers.put((self.name, frame, self.parse(data)))
         else:
-           self.interface._event_data_buffers.put((self.name, self.parse(data)))
+           self.interface._event_data_buffers.put((self.name, frame, self.parse(data)))
+
+    def callback(self, data):
+        self.update_sensor(data, data.frame)
 
     def destroy(self):
         raise NotImplementedError
@@ -50,7 +56,8 @@ class CarlaSensor(BaseSensor):
 
         type_ = self.attributes.pop("type", "")
         transform = self.attributes.pop("transform", "0,0,0,0,0,0")
-        transform = [float(x) for x in transform.split(",")]
+        if isinstance(transform, str):
+            transform = [float(x) for x in transform.split(",")]
         assert len(transform) == 6
 
         blueprint = world.get_blueprint_library().find(type_)
@@ -72,6 +79,15 @@ class CarlaSensor(BaseSensor):
             self.sensor = None
 
 
+class PseudoSensor(BaseSensor):
+
+    def __init__(self, name, attributes, interface, parent):
+        super().__init__(name, attributes, interface, parent)
+
+    def callback(self, data, frame):
+        self.update_sensor(data, frame)
+
+
 # ==================================================================================================
 # -- Cameras -----------------------------------------------------------------------------------
 # ==================================================================================================
@@ -80,6 +96,8 @@ class BaseCamera(CarlaSensor):
         super().__init__(name, attributes, interface, parent)
 
     def parse(self, sensor_data):
+        """Parses the Image into an numpy array"""
+        # sensor_data: [fov, height, width, raw_data]
         array = np.frombuffer(sensor_data.raw_data, dtype=np.dtype("uint8"))
         array = np.reshape(array, (sensor_data.height, sensor_data.width, 4))
         array = array[:, :, :3]
@@ -110,10 +128,19 @@ class CameraDVS(CarlaSensor):
     def __init__(self, name, attributes, interface, parent):
         super().__init__(name, attributes, interface, parent)
 
-    def parse(self, sensor_data):
-        # TODO
-        return []
+    def is_event_sensor(self):
+        return True
 
+    def parse(self, sensor_data):
+        """Parses the DVSEvents into an RGB image"""
+        # sensor_data: [x, y, t, polarity]
+        dvs_events = np.frombuffer(sensor_data.raw_data, dtype=np.dtype([
+            ('x', np.uint16), ('y', np.uint16), ('t', np.int64), ('pol', np.bool)]))
+
+        dvs_img = np.zeros((sensor_data.height, sensor_data.width, 3), dtype=np.uint8)
+        dvs_img[dvs_events[:]['y'], dvs_events[:]['x'], dvs_events[:]['pol'] * 2] = 255 # Blue is positive, red is negative
+
+        return dvs_img
 
 # ==================================================================================================
 # -- LIDAR -----------------------------------------------------------------------------------
@@ -122,8 +149,9 @@ class Lidar(CarlaSensor):
     def __init__(self, name, attributes, interface, parent):
         super().__init__(name, attributes, interface, parent)
 
-    # TODO(joel): Check this!
     def parse(self, sensor_data):
+        """Parses the LidarMeasurememt into an numpy array"""
+        # sensor_data: [x, y, z, intensity]
         points = np.frombuffer(sensor_data.raw_data, dtype=np.dtype('f4'))
         points = copy.deepcopy(points)
         points = np.reshape(points, (int(points.shape[0] / 4), 4))
@@ -135,8 +163,12 @@ class SemanticLidar(CarlaSensor):
         super().__init__(name, attributes, interface, parent)
 
     def parse(self, sensor_data):
-        # TODO
-        return []
+        """Parses the SemanticLidarMeasurememt into an numpy array"""
+        # sensor_data: [x, y, z, cos(angle), actor index, semantic tag]
+        points = np.frombuffer(sensor_data.raw_data, dtype=np.dtype('f4'))
+        points = copy.deepcopy(points)
+        points = np.reshape(points, (int(points.shape[0] / 6), 6))
+        return points
 
 
 # ==================================================================================================
@@ -147,9 +179,9 @@ class Radar(CarlaSensor):
     def __init__(self, name, attributes, interface, parent):
         super().__init__(name, attributes, interface, parent)
 
-    # TODO(joel): This is different to what we have (copied from leaderboard)
     def parse(self, sensor_data):
-        # [depth, azimuth, altitute, velocity]
+        """Parses the RadarMeasurement into an numpy array"""
+        # sensor_data: [depth, azimuth, altitute, velocity]
         points = np.frombuffer(sensor_data.raw_data, dtype=np.dtype('f4'))
         points = copy.deepcopy(points)
         points = np.reshape(points, (int(points.shape[0] / 4), 4))
@@ -162,26 +194,23 @@ class Gnss(CarlaSensor):
         super().__init__(name, attributes, interface, parent)
 
     def parse(self, sensor_data):
-        return [sensor_data.latitude, sensor_data.longitude]
+        """Parses the GnssMeasurement into an numpy array"""
+        # sensor_data: [latitude, longitude, altitude]
+        return np.array([sensor_data.latitude, sensor_data.longitude, sensor_data.altitude], dtype=np.float64)
 
 
 class Imu(CarlaSensor):
-    LIMITS = (-99.9, 99.9)
 
     def __init__(self, name, attributes, interface, parent):
         super().__init__(name, attributes, interface, parent)
 
     def parse(self, sensor_data):
-        accelerometer = (
-            max(Imu.LIMITS[0], min(Imu.LIMITS[1], sensor_data.accelerometer.x)),
-            max(Imu.LIMITS[0], min(Imu.LIMITS[1], sensor_data.accelerometer.y)),
-            max(Imu.LIMITS[0], min(Imu.LIMITS[1], sensor_data.accelerometer.z)))
-        gyroscope = (
-            max(Imu.LIMITS[0], min(Imu.LIMITS[1], math.degrees(sensor_data.gyroscope.x))),
-            max(Imu.LIMITS[0], min(Imu.LIMITS[1], math.degrees(sensor_data.gyroscope.y))),
-            max(Imu.LIMITS[0], min(Imu.LIMITS[1], math.degrees(sensor_data.gyroscope.z))))
-        compass = math.degrees(sensor_data.compass)
-        return [accelerometer, gyroscope, compass]
+        """Parses the IMUMeasurement into an numpy array"""
+        # sensor_data: [accelerometer, gyroscope, compass]
+        return np.array([sensor_data.accelerometer.x, sensor_data.accelerometer.y, sensor_data.accelerometer.z,
+                          sensor_data.gyroscope.x, sensor_data.gyroscope.y, sensor_data.gyroscope.z,
+                          sensor_data.compass,
+                        ], dtype=np.float64)
 
 
 class LaneInvasion(CarlaSensor):
@@ -192,14 +221,33 @@ class LaneInvasion(CarlaSensor):
         return True
 
     def parse(self, sensor_data):
-        for crossed_lane_marking in sensor_data.crossed_lane_markings:
-            if crossed_lane_marking.type == carla.LaneMarkingType.Curb or \
-                crossed_lane_marking.type == carla.LaneMarkingType.Grass:
-                return True
-        return False
+        """Parses the IMUMeasurement into a list"""
+        # sensor_data: [transform, lane marking]
+        return [sensor_data.transform, sensor_data.crossed_lane_markings]
 
 
 class Collision(CarlaSensor):
+    def __init__(self, name, attributes, interface, parent):
+        self._last_event_frame = 0
+        super().__init__(name, attributes, interface, parent)
+
+    def callback(self, data):
+        # The collision sensor can have multiple callbacks per tick. Get only the first one
+        if self._last_event_frame != data.frame:
+            self._last_event_frame = data.frame
+            self.update_sensor(data, data.frame)
+
+    def is_event_sensor(self):
+        return True
+
+    def parse(self, sensor_data):
+        """Parses the ObstacleDetectionEvent into a list"""
+        # sensor_data: [other actor, distance]
+        impulse = sensor_data.normal_impulse
+        impulse_value = math.sqrt(impulse.x ** 2 + impulse.y ** 2 + impulse.z ** 2)
+        return [sensor_data.other_actor, impulse_value]
+
+class Obstacle(CarlaSensor):
     def __init__(self, name, attributes, interface, parent):
         super().__init__(name, attributes, interface, parent)
 
@@ -207,5 +255,6 @@ class Collision(CarlaSensor):
         return True
 
     def parse(self, sensor_data):
-        impulse = sensor_data.normal_impulse
-        return math.sqrt(impulse.x ** 2 + impulse.y ** 2 + impulse.z ** 2)
+        """Parses the ObstacleDetectionEvent into a list"""
+        # sensor_data: [other actor, distance]
+        return [sensor_data.other_actor, sensor_data.distance]

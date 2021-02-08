@@ -16,7 +16,7 @@ from threading import Thread
 
 import carla
 
-from rllib_integration.sensors.sensor import BaseSensor
+from rllib_integration.sensors.sensor import PseudoSensor
 
 
 # ==============================================================================
@@ -653,7 +653,7 @@ def threaded(fn):
         return thread
     return wrapper
 
-class BirdviewManager(BaseSensor):
+class BirdviewManager(PseudoSensor):
     """
     This class is responsible of creating a 'birdview' pseudo-sensor, which is a simplified
     version of CARLA's non rendering mode.
@@ -675,12 +675,13 @@ class BirdviewManager(BaseSensor):
         """Function to copy the functionality of CARLA sensor.listen() callback,
         responsible of sending the data of the sensor each tick"""
         self.running = True
+        self.previous_frame = self.world.get_snapshot().frame
         while self.running:
             frame = self.world.get_snapshot().frame
 
             # Avoid getting the data more than once per frame
-            if self.previous_frame is None or frame > self.previous_frame:
-                self.callback(self.sensor.get_data())
+            if frame > self.previous_frame:
+                self.callback(self.sensor.get_data(), frame)
                 self.previous_frame = frame
             else:
                 time.sleep(0.005)

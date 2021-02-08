@@ -21,25 +21,32 @@ class DQNExperiment(BaseExperiment):
         super().__init__(config)  # Creates a self.config with the experiment configuration
 
         self.frame_stack = self.config["others"]["framestack"]
-        self.max_idle = self.config["others"]["max_idle"]
+        self.max_time_idle = self.config["others"]["max_time_idle"]
+        self.max_time_episode = self.config["others"]["max_time_episode"]
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
+        self.last_heading_deviation = 0
+        self.last_action = None
 
     def reset(self):
         """Called at the beginning and each time the simulation is reset"""
 
         # Ending variables
         self.time_idle = 0
-        self.done_idle = False
+        self.time_episode = 0
+        self.done_time_idle = False
         self.done_falling = False
+        self.done_time_episode = False
 
         # hero variables
-        self.last_location = carla.Location()
+        self.last_location = None
         self.last_velocity = 0
 
         # Sensor stack
         self.prev_image_0 = None
         self.prev_image_1 = None
         self.prev_image_2 = None
+
+        self.last_heading_deviation = 0
 
     def get_action_space(self):
         """Returns the action space, in this case, a discrete space"""
@@ -103,6 +110,8 @@ class DQNExperiment(BaseExperiment):
         action.reverse = action_control[3]
         action.hand_brake = action_control[4]
 
+        self.last_action = action
+
         return action
 
     def get_observation(self, sensor_data):
@@ -114,7 +123,7 @@ class DQNExperiment(BaseExperiment):
         as well as a variable with additional information about such observation.
         The information variable can be empty
         """
-        image = post_process_image(sensor_data['birdview'], normalized = False, grayscale = False)
+        image = post_process_image(sensor_data['birdview'][1], normalized = False, grayscale = False)
 
         if self.prev_image_0 is None:
             self.prev_image_0 = image
@@ -144,74 +153,97 @@ class DQNExperiment(BaseExperiment):
     def get_done_status(self, observation, core):
         """Returns whether or not the experiment has to end"""
         hero = core.hero
-        self.done_idle = self.max_idle < self.time_idle
+        self.done_time_idle = self.max_time_idle < self.time_idle
         if self.get_speed(hero) > 1.0:
             self.time_idle = 0
+        else:
+            self.time_idle += 1
+        self.time_episode += 1
+        self.done_time_episode = self.max_time_episode < self.time_episode
         self.done_falling = hero.get_location().z < -0.5
-        return self.done_idle or self.done_falling
+        return self.done_time_idle or self.done_falling or self.done_time_episode
 
     def compute_reward(self, observation, core):
         """Computes the reward"""
-
         def unit_vector(vector):
             return vector / np.linalg.norm(vector)
         def compute_angle(u, v):
             return -math.atan2(u[0]*v[1] - u[1]*v[0], u[0]*v[0] + u[1]*v[1])
         def find_current_waypoint(map_, hero):
-            return map_.get_waypoint(hero.get_location(), lane_type=carla.LaneType.Any)
+            return map_.get_waypoint(hero.get_location(), project_to_road=False, lane_type=carla.LaneType.Any)
         def inside_lane(waypoint, allowed_types):
-            return waypoint.lane_type in allowed_types
+            if waypoint is not None:
+                return waypoint.lane_type in allowed_types
+            return False
 
         world = core.world
         hero = core.hero
         map_ = core.map
 
         # Hero-related variables
-        hero_waypoint = find_current_waypoint(map_, hero)
         hero_location = hero.get_location()
         hero_velocity = self.get_speed(hero)
         hero_heading = hero.get_transform().get_forward_vector()
         hero_heading = [hero_heading.x, hero_heading.y]
-        wp_heading = hero_waypoint.transform.get_forward_vector()
-        wp_heading = [wp_heading.x, wp_heading.y]
-        hero_to_wp = unit_vector([
-            hero_waypoint.transform.location.x - hero_location.x,
-            hero_waypoint.transform.location.y - hero_location.y
-        ])
+
+        # Initialize last location
+        if self.last_location == None:
+            self.last_location = hero_location
 
         # Compute deltas
         delta_distance = float(np.sqrt(np.square(hero_location.x - self.last_location.x) + \
                             np.square(hero_location.y - self.last_location.y)))
         delta_velocity = hero_velocity - self.last_velocity
-        dot_product = np.dot(hero_heading, wp_heading)
-        angle = compute_angle(hero_heading, hero_to_wp)
 
-        # Update varibles
+        # Update variables
         self.last_location = hero_location
         self.last_velocity = hero_velocity
 
-        # Calculate reward
-        reward = 0
-
         # Reward if going forward
-        if delta_distance > 0:
-            reward += 10*delta_distance
+        reward = delta_distance
 
         # Reward if going faster than last step
-        reward += 0.05 * delta_velocity
+        if hero_velocity < 20.0:
+            reward += 0.05 * delta_velocity
 
+        # La duracion de estas infracciones deberia ser 2 segundos?
         # Penalize if not inside the lane
-        if not inside_lane(hero_waypoint, self.allowed_types):
+        closest_waypoint = map_.get_waypoint(
+            hero_location,
+            project_to_road=False,
+            lane_type=carla.LaneType.Any
+        )
+        if closest_waypoint is None or closest_waypoint.lane_type not in self.allowed_types:
             reward += -0.5
+            self.last_heading_deviation = math.pi
+        else:
+            if not closest_waypoint.is_junction:
+                wp_heading = closest_waypoint.transform.get_forward_vector()
+                wp_heading = [wp_heading.x, wp_heading.y]
+                angle = compute_angle(hero_heading, wp_heading)
+                self.last_heading_deviation = abs(angle)
 
-        if dot_product < 0.0 and not(hero_waypoint.is_junction):
-            reward += -0.5
+                if np.dot(hero_heading, wp_heading) < 0:
+                    # We are going in the wrong direction
+                    reward += -0.5
+
+                else:
+                    if abs(math.sin(angle)) > 0.4:
+                        if self.last_action == None:
+                            self.last_action = carla.VehicleControl()
+
+                        if self.last_action.steer * math.sin(angle) >= 0:
+                            reward -= 0.05
+            else:
+                self.last_heading_deviation = 0
 
         if self.done_falling:
-            reward += -3
-        if self.done_idle:
-            reward += -1
-
-        self.time_idle += 1
+            reward += -40
+        if self.done_time_idle:
+            print("Done idle")
+            reward += -100
+        if self.done_time_episode:
+            print("Done max time")
+            reward += 100
 
         return reward

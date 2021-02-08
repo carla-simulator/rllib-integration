@@ -10,6 +10,9 @@ from rllib_integration.sensors.sensor import *
 from rllib_integration.sensors.bird_view_manager import BirdviewManager
 
 class SensorFactory(object):
+    """
+    Class to simplify the creation of the different CARLA sensors
+    """
 
     @staticmethod
     def spawn(name, attributes, interface, parent):
@@ -38,6 +41,8 @@ class SensorFactory(object):
             sensor = LaneInvasion(name, attributes, interface, parent)
         elif type_ == "sensor.other.collision":
             sensor = Collision(name, attributes, interface, parent)
+        elif type_ == "sensor.other.obstacle":
+            sensor = Obstacle(name, attributes, interface, parent)
         elif type_ == "sensor.birdview":
             sensor = BirdviewManager(name, attributes, interface, parent)
         else:

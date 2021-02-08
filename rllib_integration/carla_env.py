@@ -5,11 +5,8 @@
 #
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
-"""
-This is a sample carla environment. It does basic functionality.
-"""
-from __future__ import absolute_import
-from __future__ import division
+
+
 from __future__ import print_function
 
 import gym
@@ -18,8 +15,12 @@ from rllib_integration.carla_core import CarlaCore
 
 
 class CarlaEnv(gym.Env):
+    """
+    This is a carla environment, responsible of handling all the CARLA related steps of the training.
+    """
 
     def __init__(self, config):
+        """Initializes the environment"""
         self.config = config
 
         self.experiment = self.config["experiment"]["type"](self.config["experiment"])
@@ -32,23 +33,24 @@ class CarlaEnv(gym.Env):
         self.reset()
 
     def reset(self):
-
         # Reset sensors hero and experiment
         self.hero = self.core.reset_hero(self.experiment.config["hero"])
         self.experiment.reset()
 
-        # Tick once
+        # Tick once and get the observations
         sensor_data = self.core.tick(None)
-
         observation, _ = self.experiment.get_observation(sensor_data)
+
         return observation
 
     def step(self, action):
+        """Computes one tick of the environment in order to return the new observation,
+        as well as the rewards"""
         control = self.experiment.compute_action(action)
         sensor_data = self.core.tick(control)
 
         observation, info = self.experiment.get_observation(sensor_data)
-        reward = self.experiment.compute_reward(observation, self.core)
         done = self.experiment.get_done_status(observation, self.core)
+        reward = self.experiment.compute_reward(observation, self.core)
 
         return observation, reward, done, info
