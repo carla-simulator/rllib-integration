@@ -1,26 +1,27 @@
 # To see the complete list of configurable parameters see:
 # https://github.com/ray-project/ray/blob/master/rllib/agents/trainer.py
 framework: "torch"
-num_workers: 1
-num_gpus_per_worker: 1
-num_cpus_per_worker: 11
-rollout_fragment_length: 16
+num_workers: 10
+num_gpus_per_worker: 0.4
+num_cpus_per_worker: 4
+rollout_fragment_length: 160
 timesteps_per_iteration: 20000
-train_batch_size: 64
+train_batch_size: 320
 learning_starts: 20000
 buffer_size: 20000
 # "batch_mode": "complete_episodes"
-lr: 0.0025
-# "exploration_config": {
-#   "type": "EpsilonGreedy",
-#   "initial_epsilon": 1.0,
-#   "final_epsilon": 0.02,
-#   "epsilon_timesteps": 2000000
-# }
-exploration_config: {
-  type: "SoftQ",
-  temperature: 1.0,
+lr: 0.05
+target_network_update_freq: 50
+"exploration_config": {
+  "type": "EpsilonGreedy",
+  "initial_epsilon": 1.0,
+  "final_epsilon": 0.02,
+  "epsilon_timesteps": 1000000
 }
+# exploration_config: {
+#   type: "SoftQ",
+#   temperature: 1.0,
+# }
 
 hiddens: [256, 512]
 model: {
@@ -46,13 +47,15 @@ env_config:
     resolution_y: 600
     quality_level: "Low"
     enable_map_assets: True
-    enable_rendering: True
-    show_display: True
+    enable_rendering: False
+    show_display: False
 
   experiment:
     hero:
       blueprint: "vehicle.lincoln.mkz2017"
       sensors:
+        collision:
+          type: "sensor.other.collision"
         birdview:
           type: "sensor.birdview"
           size: 300
@@ -102,4 +105,4 @@ env_config:
     others:
       framestack: 4
       max_time_idle: 600
-      max_time_episode: 6400
+      max_time_episode: 2400

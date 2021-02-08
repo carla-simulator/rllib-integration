@@ -26,6 +26,7 @@ class DQNExperiment(BaseExperiment):
         self.allowed_types = [carla.LaneType.Driving, carla.LaneType.Parking]
         self.last_heading_deviation = 0
         self.last_action = None
+        self.last_sensor_data = None
 
     def reset(self):
         """Called at the beginning and each time the simulation is reset"""
@@ -33,6 +34,8 @@ class DQNExperiment(BaseExperiment):
         # Ending variables
         self.time_idle = 0
         self.time_episode = 0
+        self.tick_collision = 0
+        self.done_collision = False
         self.done_time_idle = False
         self.done_falling = False
         self.done_time_episode = False
@@ -70,33 +73,9 @@ class DQNExperiment(BaseExperiment):
         return {
             0: [0.0, 0.00, 0.0, False, False],  # Coast
             1: [0.0, 0.00, 1.0, False, False],  # Apply Break
-            2: [0.0, 0.75, 0.0, False, False],  # Right
-            3: [0.0, 0.50, 0.0, False, False],  # Right
-            4: [0.0, 0.25, 0.0, False, False],  # Right
-            5: [0.0, -0.75, 0.0, False, False],  # Left
-            6: [0.0, -0.50, 0.0, False, False],  # Left
-            7: [0.0, -0.25, 0.0, False, False],  # Left
-            8: [0.3, 0.00, 0.0, False, False],  # Straight
-            9: [0.3, 0.75, 0.0, False, False],  # Right
-            10: [0.3, 0.50, 0.0, False, False],  # Right
-            11: [0.3, 0.25, 0.0, False, False],  # Right
-            12: [0.3, -0.75, 0.0, False, False],  # Left
-            13: [0.3, -0.50, 0.0, False, False],  # Left
-            14: [0.3, -0.25, 0.0, False, False],  # Left
-            15: [0.6, 0.00, 0.0, False, False],  # Straight
-            16: [0.6, 0.75, 0.0, False, False],  # Right
-            17: [0.6, 0.50, 0.0, False, False],  # Right
-            18: [0.6, 0.25, 0.0, False, False],  # Right
-            19: [0.6, -0.75, 0.0, False, False],  # Left
-            20: [0.6, -0.50, 0.0, False, False],  # Left
-            21: [0.6, -0.25, 0.0, False, False],  # Left
-            22: [1.0, 0.00, 0.0, False, False],  # Straight
-            23: [1.0, 0.75, 0.0, False, False],  # Right
-            24: [1.0, 0.50, 0.0, False, False],  # Right
-            25: [1.0, 0.25, 0.0, False, False],  # Right
-            26: [1.0, -0.75, 0.0, False, False],  # Left
-            27: [1.0, -0.50, 0.0, False, False],  # Left
-            28: [1.0, -0.25, 0.0, False, False],  # Left
+            2: [0.6, 0.0, 0.0, False, False],  # Straight
+            3: [0.3, -0.5, 0.0, False, False],  # Left
+            4: [0.3, 0.5, 0.0, False, False],  # Right
         }
 
     def compute_action(self, action):
@@ -142,6 +121,7 @@ class DQNExperiment(BaseExperiment):
         self.prev_image_2 = self.prev_image_1
         self.prev_image_1 = self.prev_image_0
         self.prev_image_0 = image
+        self.last_sensor_data = sensor_data
 
         return images, {}
 
@@ -153,15 +133,16 @@ class DQNExperiment(BaseExperiment):
     def get_done_status(self, observation, core):
         """Returns whether or not the experiment has to end"""
         hero = core.hero
-        self.done_time_idle = self.max_time_idle < self.time_idle
-        if self.get_speed(hero) > 1.0:
+        if self.get_speed(hero) > 2.0:
             self.time_idle = 0
         else:
             self.time_idle += 1
+        self.done_time_idle = self.max_time_idle < self.time_idle
         self.time_episode += 1
         self.done_time_episode = self.max_time_episode < self.time_episode
         self.done_falling = hero.get_location().z < -0.5
-        return self.done_time_idle or self.done_falling or self.done_time_episode
+        self.done_collision = self.tick_collision >= 5
+        return self.done_time_idle or self.done_falling or self.done_time_episode or self.done_collision
 
     def compute_reward(self, observation, core):
         """Computes the reward"""
@@ -199,51 +180,55 @@ class DQNExperiment(BaseExperiment):
         self.last_location = hero_location
         self.last_velocity = hero_velocity
 
-        # Reward if going forward
-        reward = delta_distance
+        # Calculate reward
+        reward = 0
 
-        # Reward if going faster than last step
-        if hero_velocity < 20.0:
-            reward += 0.05 * delta_velocity
-
-        # La duracion de estas infracciones deberia ser 2 segundos?
-        # Penalize if not inside the lane
         closest_waypoint = map_.get_waypoint(
             hero_location,
             project_to_road=False,
             lane_type=carla.LaneType.Any
         )
         if closest_waypoint is None or closest_waypoint.lane_type not in self.allowed_types:
-            reward += -0.5
+            reward = -0.25
             self.last_heading_deviation = math.pi
         else:
             if not closest_waypoint.is_junction:
                 wp_heading = closest_waypoint.transform.get_forward_vector()
                 wp_heading = [wp_heading.x, wp_heading.y]
+                dot_product = np.dot(hero_heading, wp_heading)
+ 
                 angle = compute_angle(hero_heading, wp_heading)
                 self.last_heading_deviation = abs(angle)
 
-                if np.dot(hero_heading, wp_heading) < 0:
-                    # We are going in the wrong direction
-                    reward += -0.5
-
+                if np.dot(hero_heading, wp_heading) > 0:
+                    if self.get_speed(hero) <= 30:
+                        reward = dot_product * (delta_distance + 0.05*delta_velocity)
+                    else:
+                        reward = -0.25
                 else:
-                    if abs(math.sin(angle)) > 0.4:
-                        if self.last_action == None:
-                            self.last_action = carla.VehicleControl()
-
-                        if self.last_action.steer * math.sin(angle) >= 0:
-                            reward -= 0.05
+                    reward = -0.25
             else:
+                reward = -0.05
                 self.last_heading_deviation = 0
 
+        # check collision
+        if "collision" in self.last_sensor_data:
+            self.tick_collision += 1
+        else:
+            self.tick_collision -= 1
+            self.tick_collision = max(self.tick_collision, 0)
+
         if self.done_falling:
-            reward += -40
+            print("Done by falling")
+            reward = -5
         if self.done_time_idle:
-            print("Done idle")
-            reward += -100
+            print("Done by idle")
+            reward = -5
+        if self.done_collision:
+            print("Done by collision")
+            reward = -5
         if self.done_time_episode:
             print("Done max time")
-            reward += 100
+            reward += 10
 
         return reward
