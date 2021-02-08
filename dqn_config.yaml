@@ -5,10 +5,11 @@ num_workers: 1
 num_gpus_per_worker: 1
 num_cpus_per_worker: 11
 rollout_fragment_length: 16
-timesteps_per_iteration: 10000
+timesteps_per_iteration: 20000
 train_batch_size: 64
-learning_starts: 0
+learning_starts: 20000
 buffer_size: 20000
+# "batch_mode": "complete_episodes"
 lr: 0.0025
 # "exploration_config": {
 #   "type": "EpsilonGreedy",
