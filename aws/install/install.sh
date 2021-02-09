@@ -25,7 +25,7 @@ mkdir ${HOME}/CARLA_0.9.11 && tar -xzf ${HOME}/CARLA_0.9.11.tar.gz -C ${HOME}/CA
 # ==================================================================================================
 echo "Preparing virtual environment..."
 source activate pytorch_latest_p37
-pip3 install pygame paramiko scp ray[rllib]
+pip3 install pygame paramiko scp ray[rllib] tensorboard
 
 # ==================================================================================================
 # -- Env variables ---------------------------------------------------------------------------------
