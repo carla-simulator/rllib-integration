@@ -29,6 +29,7 @@ done
 
 EC2_USER="ubuntu"
 PYTHON_BIN="~/anaconda3/envs/torch/bin/python3.8"
+# PYTHON_BIN="conda_py"
 
 python aws_helper.py start --instance-id $INSTANCE
 python aws_helper.py put --instance-id $INSTANCE --source ${PWD} --exclude .git keys __pycache__ map_cache
