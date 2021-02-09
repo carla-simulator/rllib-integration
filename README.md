@@ -37,8 +37,7 @@ The first step is to create the image needed for training. We provide a script t
 
 `python3 aws_helper.py create-image --installation-scripts aws/install/install.sh --name <AMI-name> --instance-type <instance-type> --volume-size <volume-size> `
 
-!!! Note
-    The recommended volume size is 500, and the instance type, g4dn.12xlarge
+**Note:** The recommended volume size is 500, and the instance type, g4dn.12xlarge
 
 ### Running the training at the instance
 
