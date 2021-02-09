@@ -132,7 +132,7 @@ if __name__ == "__main__":
     # launch arguments
     argparser.add_argument("--ami-id", type=str,  default="ami-07006dbdc25cdc232")
     argparser.add_argument("--instance-type", type=str, default="t2.micro")
-    argparser.add_argument("--volume-size", type=int, default=10)
+    argparser.add_argument("--volume-size", type=int, default=150)
     argparser.add_argument("--user-data", type=str, default="")
     # info arguments
     argparser.add_argument("--field", type=str, default="")
@@ -164,6 +164,7 @@ if __name__ == "__main__":
                 print("La region es: {}".format(utils.get_region_name()))
                 # arguments.base_ami_id = "ami-089d839e690b09b28"
                 arguments.base_ami_id = DEFAULT_AMI[utils.get_region_name()]
+
             print(arguments.base_ami_id)
             result = create_ami(arguments)
         else:  # arguments.action == "launch"
