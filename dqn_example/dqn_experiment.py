@@ -71,11 +71,11 @@ class DQNExperiment(BaseExperiment):
 
     def get_actions(self):
         return {
-            0: [0.0, 0.00, 0.0, False, False],  # Coast
-            1: [0.0, 0.00, 1.0, False, False],  # Apply Break
-            2: [0.6, 0.0, 0.0, False, False],  # Straight
-            3: [0.3, -0.5, 0.0, False, False],  # Left
-            4: [0.3, 0.5, 0.0, False, False],  # Right
+            0: [0.4, 0.00, 0.0, False, False],  # Straight
+            1: [0.4, 0.2, 0.0, False, False],  # Right
+            2: [0.4, 0.5, 0.0, False, False],  # Right
+            3: [0.4, -0.2, 0.0, False, False],  # Left
+            4: [0.4, -0.5, 0.0, False, False],  # Left
         }
 
     def compute_action(self, action):
