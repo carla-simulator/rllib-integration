@@ -10,7 +10,7 @@ As CARLA is the environment that ray wll be using, the first step is to set it u
 
 This repository is organized as follows:
 
-* **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** cprovides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data. Check the next section to show how to use it
+* **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data. Check the next section to show how to use it
 
 * **rllib_integration** contains all the infraestructure used to set up the CARLA server, clients and the training and testing experiments. It is important to note that **base_experiment.py** has the base settings of the experiments (at `BASE_EXPERIMENT_CONFIG`), as well as the `BASE_CORE_CONFIG` at **carla_core.py**, where all the CARLA default settings are set up. Additionally, if you want to create your own pseudosensor, check out **sensors/birdview_manager.py**, which is a simplified version of [CARLA's no rendering mode](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/no_rendering_mode.py).
 
