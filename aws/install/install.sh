@@ -25,13 +25,12 @@ mkdir ${HOME}/CARLA_0.9.11 && tar -xzf ${HOME}/CARLA_0.9.11.tar.gz -C ${HOME}/CA
 # ==================================================================================================
 echo "Preparing virtual environment..."
 source activate pytorch_latest_p37
-pip3 install pygame paramiko scp ray[rllib]
+pip3 install pygame paramiko scp ray[rllib] tensorboard
 
 # ==================================================================================================
 # -- Env variables ---------------------------------------------------------------------------------
 # ==================================================================================================
 echo "Setting up env variables..."
-echo "alias conda_py=/home/ubuntu/anaconda3/envs/pytorch_latest_p37/bin/python3.7" >> ~/custom_env.sh
 echo "export CARLA_ROOT=~/CARLA_0.9.11" >> ~/custom_env.sh
 echo "source activate pytorch_latest_p37" >> ~/custom_env.sh
 echo 'export PYTHONPATH=""' >> ~/custom_env.sh
