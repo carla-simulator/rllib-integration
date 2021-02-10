@@ -20,10 +20,12 @@ do
 done
 
 EC2_USER="ubuntu"
+#TENSORBOARD_BIN="tensorboard"
+TENSORBOARD_BIN="/home/ubuntu/anaconda3/envs/pytorch_latest_p37/bin/tensorboard"
 
 python aws_helper.py start --instance-id $INSTANCE
 
 PUBLIC_IP=$(echo $(python aws_helper.py info --instance-id ${INSTANCE} --field public_ip 2>&1 > /dev/null) | awk '{print $NF}')
 PEM_FILE=$(echo $(python aws_helper.py info --instance-id ${INSTANCE} --field pem_file 2>&1 > /dev/null) | awk '{print $NF}')
 
-ssh -tt -i $PEM_FILE $EC2_USER@$PUBLIC_IP "custom ~/custom_env.sh; conda_tensorboard --logdir "$DIRECTORY/$NAME" --host 0.0.0.0"
+ssh -tt -i $PEM_FILE $EC2_USER@$PUBLIC_IP "source ~/custom_env.sh; $TENSORBOARD_BIN --logdir "$DIRECTORY/$NAME" --host 0.0.0.0"

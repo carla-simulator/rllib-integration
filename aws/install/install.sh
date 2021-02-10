@@ -31,8 +31,6 @@ pip3 install pygame paramiko scp ray[rllib] tensorboard
 # -- Env variables ---------------------------------------------------------------------------------
 # ==================================================================================================
 echo "Setting up env variables..."
-echo "alias conda_py=/home/ubuntu/anaconda3/envs/pytorch_latest_p37/bin/python3.7" >> ~/custom_env.sh
-echo "alias conda_tensorboard=/home/ubuntu/anaconda3/envs/pytorch_latest_p37/bin/tensorboard" >> ~/custom_env.sh
 echo "export CARLA_ROOT=~/CARLA_0.9.11" >> ~/custom_env.sh
 echo "source activate pytorch_latest_p37" >> ~/custom_env.sh
 echo 'export PYTHONPATH=""' >> ~/custom_env.sh
