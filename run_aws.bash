@@ -28,7 +28,8 @@ do
 done
 
 EC2_USER="ubuntu"
-PYTHON_BIN="~/anaconda3/envs/torch/bin/python3.8"
+# PYTHON_BIN="/home/ubuntu/anaconda3/envs/torch/bin/python3.8"
+PYTHON_BIN="/home/ubuntu/anaconda3/envs/pytorch_latest_p37/bin/python3.7"
 
 python aws_helper.py start --instance-id $INSTANCE
 python aws_helper.py put --instance-id $INSTANCE --source ${PWD} --exclude .git keys __pycache__ map_cache
@@ -46,5 +47,4 @@ fi
 
 ssh -tt -i $PEM_FILE $EC2_USER@$PUBLIC_IP "source ~/custom_env.sh; cd rllib-integration; $COMMAND"
 
-#python aws_helper.py stop --instance-id $INSTANCE
-
+python aws_helper.py stop --instance-id $INSTANCE

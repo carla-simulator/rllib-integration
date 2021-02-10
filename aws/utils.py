@@ -107,6 +107,15 @@ def create_security_group(group_name, group_description=None):
                 }]
             },
             {
+                # Ray dashboard
+                'IpProtocol': 'tcp',
+                'FromPort': 6006,
+                'ToPort': 6006,
+                'IpRanges': [{
+                    'CidrIp': '0.0.0.0/0'
+                }]
+            },
+            {
                 # SSH ingress open to anyone
                 'IpProtocol': 'tcp',
                 'FromPort': 22,
@@ -244,20 +253,19 @@ def create_image(name,
         logging.info("Executing installation script %s", os.path.basename(script))
         exec_script(instance, script)
 
-    #logging.info("Creating image from EC2 instance %s. This may take a while...", instance.id)
-    #image = instance.create_image(Name=name)
-    #while image.state == "pending":
-    #   time.sleep(5)
-    #   image = list(ec2.images.filter(ImageIds=[image.id]))[0]
-    #if image.state == "available":
-    #   logging.info("Image created with id %s", image.id)
-    #else:
-    #   logging.error("Couldn't create image from EC2 instance %s", instance.id)
+    logging.info("Creating image from EC2 instance %s. This may take a while...", instance.id)
+    image = instance.create_image(Name=name)
+    while image.state == "pending":
+       time.sleep(5)
+       image = list(ec2.images.filter(ImageIds=[image.id]))[0]
+    if image.state == "available":
+       logging.info("Image created with id %s", image.id)
+    else:
+       logging.error("Couldn't create image from EC2 instance %s", instance.id)
 
-    #stop_instance(instance)
+    stop_instance(instance)
 
-    #return instance, image
-    return instance
+    return instance, image
 
 
 def exec_script(instance, script, args="", rsync_folder=False):
@@ -273,6 +281,7 @@ def exec_script(instance, script, args="", rsync_folder=False):
     else:
         put(instance, script)
     command += "./{} {}".format(os.path.basename(script), args)
+    logging.info("Running: {}".format(command))
     exec_command(instance, command)
 
 

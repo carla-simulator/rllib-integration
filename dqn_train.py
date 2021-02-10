@@ -137,21 +137,18 @@ def run(args):
         if args.restore:
             checkpoint = find_latest_checkpoint(args)
 
-        while True:
-            kill_all_servers()
-            ray.init()
-            tune.run(
-                CustomDQNTrainer,
-                name=args.name,
-                local_dir=args.directory,
-                stop={"perf/ram_util_percent": 85.0},
-                checkpoint_freq=1,
-                checkpoint_at_end=True,
-                restore=checkpoint,
-                config=args.config
-            )
-            ray.shutdown()
-            checkpoint = find_latest_checkpoint(args)
+        kill_all_servers()
+        ray.init()
+        tune.run(
+            CustomDQNTrainer,
+            name=args.name,
+            local_dir=args.directory,
+            stop={"perf/ram_util_percent": 85.0},
+            checkpoint_freq=1,
+            checkpoint_at_end=True,
+            restore=checkpoint,
+            config=args.config
+        )
 
     finally:
         kill_all_servers()
