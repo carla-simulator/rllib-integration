@@ -35,11 +35,18 @@ BASE_CORE_CONFIG = {
 
 
 def is_used(port):
-    """Checks whether or not a port is used"""
+    """
+    Checks whether or not a port is used.
+    :param port: specified port.
+    :return:
+    """
     return port in [conn.laddr.port for conn in psutil.net_connections()]
 
 def kill_all_servers():
-    """Kill all PIDs that start with Carla"""
+    """
+    Kills all PIDs related with CARLA.
+    :return:
+    """
     processes = [p for p in psutil.process_iter() if "carla" in p.name().lower()]
     for process in processes:
         os.kill(process.pid, signal.SIGKILL)
@@ -51,7 +58,9 @@ class CarlaCore:
     actor spawning and getting the sensors data.
     """
     def __init__(self, config={}):
-        """Initialize the server and client"""
+        """
+        Initialize the server and client.
+        """
         self.client = None
         self.world = None
         self.map = None
@@ -63,7 +72,9 @@ class CarlaCore:
         self.connect_client()
 
     def init_server(self):
-        """Start a server on a random port"""
+        """
+        Start a server on a random port.
+        """
         self.server_port = random.randint(15000, 32000)
 
         # Ray tends to start all processes simultaneously. Use random delays to avoid problems
@@ -109,7 +120,9 @@ class CarlaCore:
         )
 
     def connect_client(self):
-        """Connect to the client"""
+        """
+        Connect to the client.
+        """
 
         for i in range(self.config["retries_on_error"]):
             try:
@@ -133,7 +146,11 @@ class CarlaCore:
         raise Exception("Cannot connect to server. Try increasing 'timeout' or 'retries_on_error' at the carla configuration")
 
     def setup_experiment(self, experiment_config):
-        """Initialize the hero and sensors"""
+        """
+        Initialize the hero and sensors for the experiment.
+        :param experiment_config: Sets of parameters to configure the experiment
+        :return:
+        """
 
         self.world = self.client.load_world(
             map_name = experiment_config["town"],
@@ -166,7 +183,11 @@ class CarlaCore:
 
 
     def reset_hero(self, hero_config):
-        """This function resets / spawns the hero vehicle and its sensors"""
+        """
+        This function resets/spawns the hero vehicle and its sensors.
+        :param hero_config: Sets of parameters to configure the hero vehicle
+        :return: The spawned hero vehicle
+        """
 
         # Part 1: destroy all sensors (if necessary)
         self.sensor_interface.destroy()
@@ -233,8 +254,11 @@ class CarlaCore:
         return self.hero
 
     def spawn_npcs(self, n_vehicles, n_walkers):
-        """Spawns vehicles and walkers, also setting up the Traffic Manager and its parameters"""
-
+        """
+        Spawns vehicles and walkers, also setting up the Traffic Manager and its parameters.
+        :param n_vehicles: Number of vehicles to spawn
+        :param n_walkers: Number of walkers to spawn
+        """
 
         SpawnActor = carla.command.SpawnActor
         SetAutopilot = carla.command.SetAutopilot
@@ -314,7 +338,11 @@ class CarlaCore:
         self.actors = self.world.get_actors(vehicles_id_list + walkers_id_list + controllers_id_list)
 
     def tick(self, control):
-        """Performs one tick of the simulation, moving all actors, and getting the sensor data"""
+        """
+        Performs one tick of the simulation, moving all actors, and getting the sensor data
+        :param control: The latest control that we want to apply to move the hero vehicle
+        :return: The latest sensors data
+        """
 
         # Move hero vehicle
         if control is not None:
@@ -331,7 +359,9 @@ class CarlaCore:
         return self.get_sensor_data()
 
     def set_spectator_camera_view(self):
-        """This positions the spectator as a 3rd person view of the hero vehicle"""
+        """
+        This positions the spectator as a 3rd person view of the hero vehicle.
+        """
         transform = self.hero.get_transform()
 
         # Get the camera position
@@ -354,11 +384,17 @@ class CarlaCore:
         )
 
     def apply_hero_control(self, control):
-        """Applies the control calcualted at the experiment to the hero"""
+        """
+        Applies the control calcualted at the experiment to the hero.
+        :param control: The control that we want to apply to move the hero vehicle
+        """
         self.hero.apply_control(control)
 
     def get_sensor_data(self):
-        """Returns the data sent by the different sensors at this tick"""
+        """
+        Getter for the data sent by the different sensors at this tick.
+        :return: The sensors data
+        """
         sensor_data = self.sensor_interface.get_data()
         # print("---------")
         # world_frame = self.world.get_snapshot().frame

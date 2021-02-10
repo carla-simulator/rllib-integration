@@ -13,11 +13,11 @@ import collections.abc
 
 def post_process_image(image, normalized=True, grayscale=True):
     """
-    Convert image to gray scale and normalize between -1 and 1 if required
-    :param image:
-    :param normalized:
-    :param grayscale
-    :return: image
+    Convert image to gray scale and normalize between -1 and 1 if required.
+    :param image: Chosen image
+    :param normalized: Whether to normalize it or not
+    :param grayscale: Whether to grayscale it or not
+    :return: Modified image
     """
     if isinstance(image, list):
         image = image[0]
@@ -32,7 +32,7 @@ def post_process_image(image, normalized=True, grayscale=True):
 
 def join_dicts(d, u):
     """
-    Recursively updates a dictionary
+    Recursively updates a dictionary.
     """
     result = d.copy()
 

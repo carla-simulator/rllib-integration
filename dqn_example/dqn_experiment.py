@@ -29,7 +29,9 @@ class DQNExperiment(BaseExperiment):
         self.last_sensor_data = None
 
     def reset(self):
-        """Called at the beginning and each time the simulation is reset"""
+        """
+        Initializes variables at the beginning and each time the simulation is reset.
+        """
 
         # Ending variables
         self.time_idle = 0
@@ -51,11 +53,10 @@ class DQNExperiment(BaseExperiment):
 
         self.last_heading_deviation = 0
 
-    def get_action_space(self):
-        """Returns the action space, in this case, a discrete space"""
-        return Discrete(len(self.get_actions()))
-
-    def get_observation_space(self):
+    def set_observation_space(self):
+        """
+        Creates the observation space.
+        """
         num_of_channels = 3
         image_space = Box(
             low=0.0,
@@ -69,18 +70,30 @@ class DQNExperiment(BaseExperiment):
         )
         return image_space
 
-    def get_actions(self):
+    def set_action_space(self):
+        """
+        Creates the action space.
+        """
         return {
-            0: [0.4, 0.00, 0.0, False, False],  # Straight
+            0: [0.4, 0.0, 0.0, False, False],  # Straight
             1: [0.4, 0.2, 0.0, False, False],  # Right
             2: [0.4, 0.5, 0.0, False, False],  # Right
             3: [0.4, -0.2, 0.0, False, False],  # Left
             4: [0.4, -0.5, 0.0, False, False],  # Left
         }
 
+    def get_action_space(self):
+        """
+        Returns the action space, in this case, a discrete space.
+        """
+        return Discrete(len(self.set_action_space()))
+
     def compute_action(self, action):
-        """Given the action, returns a carla.VehicleControl() which will be applied to the hero"""
-        action_control = self.get_actions()[int(action)]
+        """
+        Given the action, returns a carla.VehicleControl() which will be applied to the hero.
+        :param action: The selected action
+        """
+        action_control = self.set_action_space()[int(action)]
 
         action = carla.VehicleControl()
         action.throttle = action_control[0]
@@ -94,13 +107,14 @@ class DQNExperiment(BaseExperiment):
         return action
 
     def get_observation(self, sensor_data):
-        """Function to do all the post processing of observations (sensor data).
+        """
+        Function that does all the post processing of observations (sensor data).
 
-        :param sensor_data: dictionary {sensor_name: sensor_data}
+        :param sensor_data: A dictionary of sensors {sensor_name: sensor_data}
 
-        Should return a tuple or list with two items, the processed observations,
+        :return: A tuple or list with two items, the processed observations,
         as well as a variable with additional information about such observation.
-        The information variable can be empty
+        The information variable can be empty.
         """
         image = post_process_image(sensor_data['birdview'][1], normalized = False, grayscale = False)
 
@@ -126,12 +140,20 @@ class DQNExperiment(BaseExperiment):
         return images, {}
 
     def get_speed(self, hero):
-        """Computes the speed of the hero vehicle in Km/h"""
+        """
+        Computes the speed of the hero vehicle in km/h.
+        :param hero: The hero vehicle
+        :return: The speed in km/h
+        """
         vel = hero.get_velocity()
         return 3.6 * math.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)
 
-    def get_done_status(self, observation, core):
-        """Returns whether or not the experiment has to end"""
+    def get_done_status(self, core):
+        """
+        Returns whether or not the experiment has to end.
+        :param core: The CARLA core
+        :returns: If the current episode is done or not
+        """
         hero = core.hero
         if self.get_speed(hero) > 2.0:
             self.time_idle = 0
@@ -144,8 +166,11 @@ class DQNExperiment(BaseExperiment):
         self.done_collision = self.tick_collision >= 5
         return self.done_time_idle or self.done_falling or self.done_time_episode or self.done_collision
 
-    def compute_reward(self, observation, core):
-        """Computes the reward"""
+    def compute_reward(self, core):
+        """
+        Computes the reward, based on the specified parameters.
+        :param core: The CARLA core
+        """
         def unit_vector(vector):
             return vector / np.linalg.norm(vector)
         def compute_angle(u, v):

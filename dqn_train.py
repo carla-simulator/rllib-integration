@@ -55,7 +55,7 @@ class DQNCallbacks(DefaultCallbacks):
 
 class CustomDQNTrainer(DQNTrainer):
     """
-    Modified version of DQNTrainer with the added functionality of saving the torch model for later inference
+    Modified version of DQNTrainer with the added functionality of saving the torch model for later inference.
     """
     def save_checkpoint(self, checkpoint_dir):
         checkpoint_path = super().save_checkpoint(checkpoint_dir)
@@ -97,7 +97,7 @@ def find_latest_checkpoint(args):
 
 def manage_training_directory(args):
     """
-    Depending of the arguments, makes sure that the directory is correctly setup
+    Depending of the arguments, makes sure that the directory is correctly setup.
     """
     training_directory = args.directory + "/" + args.name
 
@@ -121,7 +121,7 @@ def manage_training_directory(args):
 
 def parse_config(args):
     """
-    Parses the .yaml configuration file into a readable dictionary
+    Parses the .yaml configuration file into a readable dictionary.
     """
     with open(args.configuration_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
