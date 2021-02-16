@@ -137,11 +137,12 @@ def run(args):
         checkpoint = False
         if args.restore:
             checkpoint = find_latest_checkpoint(args)
-        tb = program.TensorBoard()
-        tb.configure(argv=[None, '--logdir', args.directory + "/" + args.name])
-        url = tb.launch()
+        if not args.tboff:
+            tb = program.TensorBoard()
+            tb.configure(argv=[None, '--logdir', args.directory + "/" + args.name])
+            url = tb.launch()
         kill_all_servers()
-        ray.init(auto="address")
+        ray.init(address=args.address)
         tune.run(
             CustomDQNTrainer,
             name=args.name,
@@ -178,6 +179,15 @@ def main():
                            action="store_true",
                            default=False,
                            help="Flag to overwrite a specific directory (warning: all content of the folder will be lost.)")
+    argparser.add_argument("--tboff",
+                           action="store_true",
+                           default=False,
+                           help="Flag to deactivate Tensorboard")
+    argparser.add_argument("-a", "--address",
+                           metavar="A",
+                           default=None,
+                           help="Flag to use auto address (when using autoscaler, set it to \"auto\")")
+
 
     args = argparser.parse_args()
     args.training_directory = manage_training_directory(args)
