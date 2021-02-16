@@ -24,6 +24,7 @@ from ray.rllib.agents.dqn import DQNTrainer
 
 import torch
 import numpy as np
+from tensorboard import program
 
 from rllib_integration.carla_env import CarlaEnv
 from rllib_integration.carla_core import kill_all_servers
@@ -136,7 +137,9 @@ def run(args):
         checkpoint = False
         if args.restore:
             checkpoint = find_latest_checkpoint(args)
-
+        tb = program.TensorBoard()
+        tb.configure(argv=[None, '--logdir', args.directory + "/" + args.name])
+        url = tb.launch()
         kill_all_servers()
         ray.init(auto="address")
         tune.run(
