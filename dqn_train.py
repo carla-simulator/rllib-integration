@@ -142,7 +142,7 @@ def run(args):
             tb.configure(argv=[None, '--logdir', args.directory + "/" + args.name])
             url = tb.launch()
         kill_all_servers()
-        ray.init(address=args.address)
+        ray.init(address= "auto" if args.auto else None)
         tune.run(
             CustomDQNTrainer,
             name=args.name,
@@ -183,10 +183,10 @@ def main():
                            action="store_true",
                            default=False,
                            help="Flag to deactivate Tensorboard")
-    argparser.add_argument("-a", "--address",
-                           metavar="A",
-                           default=None,
-                           help="Flag to use auto address (when using autoscaler, set it to \"auto\")")
+    argparser.add_argument("--auto",
+                           action="store_true",
+                           default=False,
+                           help="Flag to use auto address")
 
 
     args = argparser.parse_args()
