@@ -11,14 +11,15 @@
 # ==================================================================================================
 echo "Installing dependencies..."
 sudo apt-get update
-sudo apt-get install pulseaudio
+sudo apt-get install -y pulseaudio
 
 # ==================================================================================================
 # -- Install CARLA ---------------------------------------------------------------------------------
 # ==================================================================================================
 echo "Installing CARLA. This may take a while..."
-wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.11.tar.gz -P ${HOME}
-mkdir ${HOME}/CARLA_0.9.11 && tar -xzf ${HOME}/CARLA_0.9.11.tar.gz -C ${HOME}/CARLA_0.9.11
+curl -o CARLA_0.9.11.tar.gz https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.11.tar.gz
+mkdir ${HOME}/CARLA_0.9.11
+tar -xzf ${HOME}/CARLA_0.9.11.tar.gz -C ${HOME}/CARLA_0.9.11
 
 # ==================================================================================================
 # -- Install RLlib ---------------------------------------------------------------------------------
@@ -36,5 +37,7 @@ echo "source activate pytorch_latest_p37" >> ~/custom_env.sh
 echo 'export PYTHONPATH=""' >> ~/custom_env.sh
 echo 'export PYTHONPATH=$PYTHONPATH:"${CARLA_ROOT}/PythonAPI/carla/dist/$(ls ${CARLA_ROOT}/PythonAPI/carla/dist | grep py3.)"' >> ~/custom_env.sh
 echo 'export PYTHONPATH=$PYTHONPATH:"${CARLA_ROOT}/PythonAPI/carla"' >> ~/custom_env.sh
+echo 'alias python3=~/anaconda3/envs/pytorch_latest_p37/bin/python3.7' >> ~/custom_env.sh
+echo 'alias python=~/anaconda3/envs/pytorch_latest_p37/bin/python3.7' >> ~/custom_env.sh
 
 echo "source ~/custom_env.sh" >> ~/.bashrc

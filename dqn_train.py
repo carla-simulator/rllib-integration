@@ -138,7 +138,7 @@ def run(args):
             checkpoint = find_latest_checkpoint(args)
 
         kill_all_servers()
-        ray.init()
+        ray.init(auto="address")
         tune.run(
             CustomDQNTrainer,
             name=args.name,
