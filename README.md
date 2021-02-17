@@ -43,7 +43,10 @@ With CARLA installed, we can install the rest of the prerequisites with:
 
 Once everything is installed and ready, the training can be started. In the case of the provided example, you can run it with the command line:
 
-`python3 dqn_train.py dqn_config.yaml --name dqn`
+```
+pip3 install -r dqn_example/dqn_requirements.txt  # Install torch
+python3 dqn_train.py dqn_example/dqn_config.yaml --name dqn
+```
 
 **Note:** The default configuration uses 1 GPU and 12 CPUs, so if your current instance doesn't have that amount of capacity, lower the numbers at the `dqn_config.yaml`.
 
