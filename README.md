@@ -8,9 +8,9 @@ RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-
 
 This repository is organized as follows:
 
-* **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data. Check the next section to show how to use it
-
 * **rllib_integration** contains all the infraestructure used to set up the CARLA server, clients and the training and testing experiments. It is important to note that **base_experiment.py** has the base settings of the experiments (at `BASE_EXPERIMENT_CONFIG`), as well as the `BASE_CORE_CONFIG` at **carla_core.py**, where all the CARLA default settings are set up. Additionally, if you want to create your own pseudosensor, check out **sensors/birdview_manager.py**, which is a simplified version of [CARLA's no rendering mode](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/no_rendering_mode.py).
+
+* **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data. Check the next section to show how to use it
 
 * **dqn_example**, as well as all the **dqn_*** files provide an easy to understand example on how to use the tools available at the previously explained folder.
 
@@ -31,7 +31,7 @@ In order to run this RLlib integration, the following steps have to be taken
 
 ### Setting up CARLA and dependencies
 
-As CARLA is the environment that ray wll be using, the first step is to set it up. To do so, **a packaged version will have to be installed** (see all [**CARLA releases**](https://github.com/carla-simulator/carla/releases). This integration has been done using CARLA 0.9.11 and therefore it is recommended to use that version. While other versions might be compatible, they haven't been fully tested, so procede at your own discretion.
+As CARLA is the environment that ray will be using, the first step is to set it up. To do so, **a packaged version will have to be installed** (see all [**CARLA releases**](https://github.com/carla-simulator/carla/releases)). This integration has been done using CARLA 0.9.11 and therefore it is recommended to use that version. While other versions might be compatible, they haven't been fully tested, so procede at your own discretion.
 
 Additionally, in order to know where this package is located, set the **CARLA_ROOT** environment variable to the folder containing it.
 
