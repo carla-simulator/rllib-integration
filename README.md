@@ -1,10 +1,8 @@
+# CARLA and RLlib integration
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla), allowing the easy use of the CARLA environment for training and inference purposes.
-
-## Setup Carla
-
-As CARLA is the environment that ray wll be using, the first step is to set it up. To do so, a packaged version will have to be installed (see all [**CARLA releases**](https://github.com/carla-simulator/carla/releases). This integration has been done using CARLA 0.9.11 and therefore it is recommended to use that version. While other versions might be compatible, they haven't been fully tested, so procede at your own discretion. Additionally, in order to know where this packaged is located, set the **CARLA_ROOT** environment variable to the folder containing it.
 
 ## Project Organization
 
@@ -26,6 +24,28 @@ This next section dives deeper into all the files used by the DQN example. For t
 * **dqn_inference_ray.py** holds the same functionality as the previous inference file but in this case, it is done using the 
 ray library.
 * At **dqn_example/dqn_experiment.py**, the experiment class is created, with all the information regarding the action space, observation space, actions and rewards needed for the DQN. It is recommended that all experiments inherit from `BaseExperiment`, at **rllib_integration/base_experiment.py**.
+
+## Running the repository locally
+
+In order to run this RLlib integration, the following steps have to be taken
+
+### Setting up CARLA and dependencies
+
+As CARLA is the environment that ray wll be using, the first step is to set it up. To do so, **a packaged version will have to be installed** (see all [**CARLA releases**](https://github.com/carla-simulator/carla/releases). This integration has been done using CARLA 0.9.11 and therefore it is recommended to use that version. While other versions might be compatible, they haven't been fully tested, so procede at your own discretion.
+
+Additionally, in order to know where this package is located, set the **CARLA_ROOT** environment variable to the folder containing it.
+
+With CARLA installed, we can install the rest of the prerequisites with:
+
+`pip3 install -r requirements.txt`
+
+### Running the training 
+
+Once everything is installed and ready, the training can be started. In the case of the provided example, you can run it with the command line:
+
+`python3 dqn_train.py dqn_config.yaml --name dqn`
+
+**Note:** The default configuration uses 1 GPU and 12 CPUs, so if your current instance doesn't have that amount of capacity, lower the numbers at the `dqn_config.yaml`.
 
 ## Running on the cloud
 
