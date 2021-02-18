@@ -127,9 +127,11 @@ class MapImage(object):
             self.big_map_surface = pygame.Surface((width_in_pixels, width_in_pixels))
             self.draw_road_map(self.big_map_surface, carla_world, carla_map, precision=0.05)
 
-            # If folders path does not exist, create it
-            if not os.path.exists(self.dirname):
+            # To avoid race conditions between multiple ray workers.
+            try:
                 os.makedirs(self.dirname)
+            except FileExistsError:
+                pass
 
             # Remove files if selected town had a previous version saved
             list_filenames = glob.glob(os.path.join(self.dirname, carla_map.name) + "*")

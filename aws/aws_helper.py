@@ -14,8 +14,7 @@ import logging
 import sys
 import os
 
-import aws.utils as utils
-
+import utils
 
 # Deep Learning AMI (Ubuntu 18.04) Version 39.0
 DEFAULT_AMI = {
@@ -54,9 +53,17 @@ def create_ami(args):
         installation scripts: %s
         user data: %s""", args.name, args.base_ami_id, args.instance_type, args.key_name,
         args.security_group_name, args.volume_size, args.installation_scripts, args.user_data)
-    utils.create_image(args.name, args.base_ami_id, args.instance_type, args.key_name,
-                       args.security_group_name, args.volume_size, args.installation_scripts, args.user_data)
+    instance, image = utils.create_image(args.name, args.base_ami_id,
+                                         args.instance_type, args.key_name,
+                                         args.security_group_name,
+                                         args.volume_size,
+                                         args.installation_scripts,
+                                         args.user_data)
 
+    print("\n")
+    utils.print_image_info(image)
+    print("\n")
+    utils.print_instance_info(instance)
 
 def launch(args):
     logging.info(
@@ -161,7 +168,6 @@ if __name__ == "__main__":
 
         if arguments.action == "create-image":
             if not arguments.base_ami_id:
-                print("La region es: {}".format(utils.get_region_name()))
                 # arguments.base_ami_id = "ami-089d839e690b09b28"
                 arguments.base_ami_id = DEFAULT_AMI[utils.get_region_name()]
 

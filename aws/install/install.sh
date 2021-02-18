@@ -16,10 +16,17 @@ sudo apt-get install -y pulseaudio
 # ==================================================================================================
 # -- Install CARLA ---------------------------------------------------------------------------------
 # ==================================================================================================
+CARLA_VERSION=0.9.11
+
 echo "Installing CARLA. This may take a while..."
-curl -o CARLA_0.9.11.tar.gz https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_0.9.11.tar.gz
-mkdir ${HOME}/CARLA_0.9.11
-tar -xzf ${HOME}/CARLA_0.9.11.tar.gz -C ${HOME}/CARLA_0.9.11
+curl -o ${HOME}/CARLA_${CARLA_VERSION}.tar.gz https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_${CARLA_VERSION}.tar.gz
+mkdir -p ${HOME}/CARLA_${CARLA_VERSION}
+tar -xzf ${HOME}/CARLA_${CARLA_VERSION}.tar.gz -C ${HOME}/CARLA_${CARLA_VERSION}
+
+echo "Installing CARLA additional maps. This may take a while..."
+curl -o ${HOME}/AdditionalMaps_${CARLA_VERSION}.tar.gz https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/AdditionalMaps_${CARLA_VERSION}.tar.gz
+mv ${HOME}/AdditionalMaps_${CARLA_VERSION}.tar.gz ${HOME}/CARLA_${CARLA_VERSION}/Import
+cd ${HOME}/CARLA_${CARLA_VERSION} && bash ImportAssets.sh && cd ${HOME}
 
 # ==================================================================================================
 # -- Install RLlib ---------------------------------------------------------------------------------

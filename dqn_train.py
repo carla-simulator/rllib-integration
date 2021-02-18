@@ -139,7 +139,10 @@ def run(args):
             checkpoint = find_latest_checkpoint(args)
         if not args.tboff:
             tb = program.TensorBoard()
-            tb.configure(argv=[None, '--logdir', args.directory + "/" + args.name])
+            argv = [None, '--logdir', args.directory + "/" + args.name] 
+            if args.auto:
+                argv.extend(["--host", "0.0.0.0"])
+            tb.configure(argv=argv)
             url = tb.launch()
         kill_all_servers()
         ray.init(address= "auto" if args.auto else None)
@@ -151,7 +154,8 @@ def run(args):
             checkpoint_freq=1,
             checkpoint_at_end=True,
             restore=checkpoint,
-            config=args.config
+            config=args.config,
+            queue_trials=True
         )
 
     finally:
