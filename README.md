@@ -54,24 +54,54 @@ python3 dqn_train.py dqn_example/dqn_config.yaml --name dqn
 
 ## Running on AWS
 
-Additionally, we also provide tools used to automatically run the training on an EC2 instance.
+Additionally, we also provide tools to automatically run the training on EC2 instances. To that end, we make use of the [**Ray autoscaler**](https://docs.ray.io/en/latest/cluster/index.html) API.
 
-### Creation of the training AMI
+### Creating the training AMI
 
-The first step is to create the image needed for training. We provide a script that automatically creates it, using the Deep Learning AMI (Ubuntu 18.04) as the base image. Additionally, we also install CARLA 0.9.11 and all the needed libraries inside a conda environment. In order to execute create the AMI, run:
-
-```
-python3 aws_helper.py create-image --installation-scripts install/install.sh --name <AMI-name> --instance-type <instance-type> --volume-size <volume-size>
-```
-
-**Note:** The recommended volume size is 500, and the instance type, g4dn.12xlarge
-
-### Running the training at the instance
-
-With the image created, we can now run the training at the instance. Run:
+The first step is to create the image needed for training. We provide a script that automatically creates it, using the Deep Learning AMI (Ubuntu 18.04) as the base image:
 
 ```
-bash run_aws.bash -i <instance-id> -s <training_file> [-c <configuration_file.yaml> -n <experiment-name> -d <directory-name>]
+python3 aws_helper.py create-image --name <AMI-name> --installation-scripts install/install.sh --instance-type <instance-type> --volume-size <volume-size>
 ```
 
-With this command, the instance will be automatically started (if needed) and the training process will begin. Any argument that is accepted by the training file can also be passed directly to the `run_aws.bash` file.
+**Note:** This script will end by outputting information about the created image. In order to use RAY's autoscaler, update the image id and security group id at [`dqn_example/dqn_autoscaler.yaml`](https://github.com/carla-simulator/rllib-integration/blob/readme/dqn_example/dqn_autoscaler.yaml#L39).
+
+
+### Running the training AMI
+
+With the image created, we can now run the training at the cluster:
+
+
+1. Initialize the cluster
+
+```
+ray up dqn_example/dqn_autoscaler.yaml
+```
+
+2.  (Optional) Update remote files with local changes.
+
+If the local code has been modified after the cluster initialization, use these command lines to update it.
+
+```
+ray rsync-up dqn_example/dqn_autoscaler.yaml dqn_example .
+ray rsync-up dqn_example/dqn_autoscaler.yaml rllib_integration .
+```
+
+3. Run the training
+
+```
+ray submit dqn_example/dqn_autoscaler.yaml dqn_train.py -- dqn_example/dqn_config.yaml --name test --auto --overwrite
+```
+
+4. (Optional) Monitor the cluster status 
+
+```
+ray attach dqn_example/dqn_autoscaler.yaml
+watch -n 1 ray status
+```
+
+5. Shutdown the cluster
+
+```
+ray down dqn_example/dqn_autoscaler.yaml
+```
