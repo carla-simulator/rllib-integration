@@ -37,7 +37,9 @@ Additionally, in order to know where this package is located, set the **CARLA_RO
 
 With CARLA installed, we can install the rest of the prerequisites with:
 
-`pip3 install -r requirements.txt`
+```
+pip3 install -r requirements.txt
+```
 
 ### Running the training 
 
@@ -50,7 +52,7 @@ python3 dqn_train.py dqn_example/dqn_config.yaml --name dqn
 
 **Note:** The default configuration uses 1 GPU and 12 CPUs, so if your current instance doesn't have that amount of capacity, lower the numbers at the `dqn_config.yaml`.
 
-## Running on the cloud
+## Running on AWS
 
 Additionally, we also provide tools used to automatically run the training on an EC2 instance.
 
@@ -58,7 +60,9 @@ Additionally, we also provide tools used to automatically run the training on an
 
 The first step is to create the image needed for training. We provide a script that automatically creates it, using the Deep Learning AMI (Ubuntu 18.04) as the base image. Additionally, we also install CARLA 0.9.11 and all the needed libraries inside a conda environment. In order to execute create the AMI, run:
 
-`python3 aws_helper.py create-image --installation-scripts aws/install/install.sh --name <AMI-name> --instance-type <instance-type> --volume-size <volume-size> `
+```
+python3 aws_helper.py create-image --installation-scripts install/install.sh --name <AMI-name> --instance-type <instance-type> --volume-size <volume-size>
+```
 
 **Note:** The recommended volume size is 500, and the instance type, g4dn.12xlarge
 
@@ -66,6 +70,8 @@ The first step is to create the image needed for training. We provide a script t
 
 With the image created, we can now run the training at the instance. Run:
 
-`bash run_aws.bash -i <instance-id> -s <training_file> [-c <configuration_file.yaml> -n <experiment-name> -d <directory-name>]`
+```
+bash run_aws.bash -i <instance-id> -s <training_file> [-c <configuration_file.yaml> -n <experiment-name> -d <directory-name>]
+```
 
 With this command, the instance will be automatically started (if needed) and the training process will begin. Any argument that is accepted by the training file can also be passed directly to the `run_aws.bash` file.
