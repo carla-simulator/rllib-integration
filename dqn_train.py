@@ -24,6 +24,7 @@ from ray.rllib.agents.dqn import DQNTrainer
 
 import torch
 import numpy as np
+from tensorboard import program
 
 from rllib_integration.carla_env import CarlaEnv
 from rllib_integration.carla_core import kill_all_servers
@@ -136,9 +137,15 @@ def run(args):
         checkpoint = False
         if args.restore:
             checkpoint = find_latest_checkpoint(args)
-
+        if not args.tboff:
+            tb = program.TensorBoard()
+            argv = [None, '--logdir', args.directory + "/" + args.name] 
+            if args.auto:
+                argv.extend(["--host", "0.0.0.0"])
+            tb.configure(argv=argv)
+            url = tb.launch()
         kill_all_servers()
-        ray.init()
+        ray.init(address= "auto" if args.auto else None)
         tune.run(
             CustomDQNTrainer,
             name=args.name,
@@ -147,7 +154,8 @@ def run(args):
             checkpoint_freq=1,
             checkpoint_at_end=True,
             restore=checkpoint,
-            config=args.config
+            config=args.config,
+            queue_trials=True
         )
 
     finally:
@@ -175,6 +183,15 @@ def main():
                            action="store_true",
                            default=False,
                            help="Flag to overwrite a specific directory (warning: all content of the folder will be lost.)")
+    argparser.add_argument("--tboff",
+                           action="store_true",
+                           default=False,
+                           help="Flag to deactivate Tensorboard")
+    argparser.add_argument("--auto",
+                           action="store_true",
+                           default=False,
+                           help="Flag to use auto address")
+
 
     args = argparser.parse_args()
     args.training_directory = manage_training_directory(args)

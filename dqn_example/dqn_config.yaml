@@ -8,7 +8,7 @@ rollout_fragment_length: 16
 timesteps_per_iteration: 20000
 train_batch_size: 64
 learning_starts: 20000
-buffer_size: 20000
+buffer_size: 5000
 # "batch_mode": "complete_episodes"
 lr: 0.0025
 # "exploration_config": {
@@ -39,7 +39,7 @@ model: {
 env_config:
   carla:
     host: "localhost"
-    timeout: 10.0
+    timeout: 30.0
     timestep: 0.05
     retries_on_error: 25
     resolution_x: 600
