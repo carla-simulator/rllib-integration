@@ -24,6 +24,7 @@ from botocore.exceptions import ClientError
 import paramiko
 import scp
 
+MAX_TRIES = 5
 
 def create_key_pair(key_name, private_key_file_name=None):
     """
@@ -140,6 +141,19 @@ def get_instance(instance_id):
         return None
     assert len(instances) == 1
     return instances[0]
+
+
+def print_image_info(image):
+    print("\033[1mImage id:\033[0m {}".format(image.id))
+
+
+def print_instance_info(instance):
+    print("\033[1mInstance id:\033[0m {}".format(instance.id))
+    print("\033[1mKey:\033[0m {}".format(instance.key_name))
+    print("\033[1mSecurity group:\033[0m ")
+    for group in instance.security_groups:
+        group_name, group_id = group["GroupName"], group["GroupId"]
+        print("\t{} ({})".format(group_name, group_id))
 
 
 def get_info(instance, field):
@@ -288,10 +302,8 @@ def exec_script(instance, script, args="", rsync_folder=False):
 def exec_command(instance, command):
     ssh_client = _get_ssh_client(instance)
     _, stdout, stderr = ssh_client.exec_command(command)
-    # TODO: Print stderr
     for line in iter(stdout.readline, ""):
         print(line, end="")
-
 
 def put(instance, source, target=".", exclude=(".git", "keys", "__pycache__", "map_cache")):
     logging.info("Copying %s into EC2 instance %s", source, instance.id)
@@ -353,7 +365,17 @@ def _get_ssh_client(instance):
 
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(hostname=hostname, username=username, key_filename=key_filename)
+
+    i, is_connected = 0, False
+    while not is_connected and i <= MAX_TRIES:
+        try:
+            ssh_client.connect(hostname=hostname, username=username, key_filename=key_filename)
+            is_connected = True
+        except:
+            logging.warning("Unable to connect to the instance. Trying again...")
+            time.sleep(5)
+            i+= 1
+
     return ssh_client
 
 
