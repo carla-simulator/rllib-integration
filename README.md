@@ -8,11 +8,11 @@ RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-
 
 This repository is organized as follows:
 
-* **rllib_integration** contains all the infraestructure used to set up the CARLA server, clients and the training and testing experiments. Additionally, if you want to create your own pseudosensor, check out **sensors/birdview_manager.py**, which is a simplified version of [CARLA's no rendering mode](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/no_rendering_mode.py).
+* **rllib_integration** contains all the infrastructure used to set up the CARLA server, clients and the training and testing experiments. Additionally, if you want to create your own pseudo-sensor, check out **sensors/birdview_manager.py**, which is a simplified version of [CARLA's no rendering mode](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/no_rendering_mode.py).
 
 * **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data. Check the next section to show how to use it
 
-* **dqn_example**, as well as all the **dqn_*** files provide an easy to understand example on how to use the tools available at the previously explained folder.
+* **dqn_example**, as well as all the others **dqn_*** files, provide an easy-to-understand example on how to use the tools available at the previously explained folder.
 
 ## Running the repository locally
 
@@ -20,7 +20,7 @@ In order to run this RLlib integration, the following steps have to be taken:
 
 ### Setting up CARLA and dependencies
 
-As CARLA is the environment that ray will be using, the first step is to set it up. To do so, **a packaged version will have to be installed** (see all [**CARLA releases**](https://github.com/carla-simulator/carla/releases)). This integration has been done using CARLA 0.9.11 and therefore it is recommended to use that version. While other versions might be compatible, they haven't been fully tested, so procede at your own discretion.
+As CARLA is the environment that Ray will be using, the first step is to set it up. To do so, **a packaged version must be installed** (see all [**CARLA releases**](https://github.com/carla-simulator/carla/releases)). This integration has been done using CARLA 0.9.11, and therefore it is recommended to use that version. While other versions might be compatible, they haven't been fully tested, so proceed at your own discretion.
 
 Additionally, in order to know where this package is located, set the **CARLA_ROOT** environment variable to the path of the folder.
 
@@ -36,7 +36,7 @@ With all the setup complete, the only step missing is to run the training script
 
 ## Running on AWS
 
-Additionally, we also provide tools to automatically run the training on EC2 instances. To that end, we make use of the [**Ray autoscaler**](https://docs.ray.io/en/latest/cluster/index.html) API.
+Additionally, we also provide tools to automatically run the training on EC2 instances. To do so, we use the [**Ray autoscaler**](https://docs.ray.io/en/latest/cluster/index.html) API.
 
 ### Creating the training AMI
 
@@ -46,11 +46,11 @@ The first step is to create the image needed for training. We provide a script t
 python3 aws_helper.py create-image --name <AMI-name> --installation-scripts <installation-scripts> --instance-type <instance-type> --volume-size <volume-size>
 ```
 
-**Note:** This script will end by outputting information about the created image. In order to use RAY's autoscaler, manually update the image id and security group id information at your autoscaler configuration file with the provided ones.
+**Note:** This script will end by outputting information about the created image. In order to use Ray autoscaler, manually update the image id and security group id information at your autoscaler configuration file with the provided ones.
 
 ### Running the training
 
-With the image created, we can use RAY's API to run the training at the cluster:
+With the image created, we can use Ray's API to run the training at the cluster:
 
 1. Initialize the cluster:
 
@@ -87,13 +87,12 @@ ray down <autoscaler_configuration_file>
 
 ## DQN example
 
-This next section dives deeper into all the files used by the DQN example. For this example, ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285) is used, and both training and inference, are showcased. The files are as follows:
+This next section dives deeper into all the files used by the DQN example. For this example, Ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285) is used, and both training and inference, are showcased. The files are as follows:
 
-* **dqn_train.py** is the entry to the training. It has one compulsory argument, which should be the path to the experiment configuration. Here, the configuration is parsed and given to ray, along with the experiment and CARLA environment classes.
-* **dqn_example/dqn_config.yaml** is a yaml configuration file. This should be the argument given to the _dqn_train.py_ file. Both the experiment and CARLA settings, as well as the ray ones can be changed from here. These will be updated on top of the default ones.
-* **dqn_inference.py** is the script used to start an inference. For this example, one argument is needed, the path to a pytorch checkpoint. 
-* **dqn_inference_ray.py** holds the same functionality as the previous inference file but in this case, it is done using the 
-ray library. As with the previous file, it also requires a cehckpoint file, which should be automatically be created by the trainer.
+* **dqn_train.py** is the entry to the training. It has one compulsory argument, which should be the path to the experiment configuration. Here, the configuration is parsed and given to Ray, along with the experiment and CARLA environment classes.
+* **dqn_example/dqn_config.yaml** is a yaml configuration file. This should be the argument given to the _dqn_train.py_ file. Both the experiment and CARLA settings, as well as the Ray ones can be changed from here. These will be updated on top of the default ones.
+* **dqn_inference.py** is the script used to start an inference. For this example, one argument is needed, the path to a PyTorch checkpoint. 
+* **dqn_inference_ray.py** holds the same functionality as the previous inference file but in this case, it is done using the Ray library. As with the previous file, it also requires a checkpoint file, which should be automatically be created by the trainer.
 * At **dqn_example/dqn_experiment.py**, the experiment class is created, with all the information regarding the action space, observation space, actions and rewards needed for the DQN. It is recommended that all experiments inherit from `BaseExperiment`, at **rllib_integration/base_experiment.py**.
 
 With its structure explain, the next sections will be used to showcase how to run this specific example.
