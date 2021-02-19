@@ -40,7 +40,7 @@ Additionally, we also provide tools to automatically run the training on EC2 ins
 
 ### Creating the training AMI
 
-The first step is to create the image needed for training. We provide a script that automatically creates it, using the Deep Learning AMI (Ubuntu 18.04) as the base image:
+The first step is to create the image needed for training. We provide a script that automatically creates it, given the base image and the installation script:
 
 ```
 python3 aws_helper.py create-image --name <AMI-name> --installation-scripts <installation-scripts> --instance-type <instance-type> --volume-size <volume-size>
@@ -48,7 +48,7 @@ python3 aws_helper.py create-image --name <AMI-name> --installation-scripts <ins
 
 **Note:** This script will end by outputting information about the created image. In order to use RAY's autoscaler, manually update the image id and security group id information at your autoscaler configuration file with the provided ones.
 
-### Running the training AMI
+### Running the training
 
 With the image created, we can use RAY's API to run the training at the cluster:
 
@@ -63,7 +63,7 @@ ray up <autoscaler_configuration_file>
 If the local code has been modified after the cluster initialization, use these command lines to update it.
 
 ```
-ray rsync-up <path_to_local_folder> <path_to_remote_folder>
+ray rsync-up <autoscaler_configuration_file> <path_to_local_folder> <path_to_remote_folder>
 ```
 
 3. Run the training:
@@ -85,7 +85,7 @@ watch -n 1 ray status
 ray down <autoscaler_configuration_file>
 ```
 
-## Breakdown of the example experiment
+## DQN example
 
 This next section dives deeper into all the files used by the DQN example. For this example, ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285) is used, and both training and inference, are showcased. The files are as follows:
 
@@ -110,7 +110,7 @@ python3 dqn_train.py dqn_example/dqn_config.yaml --name dqn
 
 ### Running the example on AWS
 
-On the other hand, if you want to run this example on AWS, you have to first create the AMI with:
+On the other hand, if you want to run this example on AWS, you have to first create the AMI. For this example, we use the Deep Learning AMI (Ubuntu 18.04) as the base image:
 
 ```
 python3 aws_helper.py create-image --name <AMI-name> --installation-scripts install/install.sh --instance-type <instance-type> --volume-size <volume-size>
@@ -118,9 +118,9 @@ python3 aws_helper.py create-image --name <AMI-name> --installation-scripts inst
 
 **Note:** Remember to change the image id and security group id at [`dqn_example/dqn_autoscaler.yaml`](https://github.com/carla-simulator/rllib-integration/blob/readme/dqn_example/dqn_autoscaler.yaml#L39).
 
-And then, initialize the clusters and start the training:
+And then, initialize the cluster and start the training:
 
-```
+```bash
 # Initialize the cluster
 ray up dqn_example/dqn_autoscaler.yaml
 
