@@ -45,7 +45,6 @@ def run(args):
                  queue_trials=True)
 
     finally:
-        print("Shutdown...")
         kill_all_servers()
         ray.shutdown()
 
