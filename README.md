@@ -133,7 +133,7 @@ For this example, we use the autoscaler configuration at [dqn_example/dqn_autosc
 python3 aws_helper.py create-image --name <AMI-name> --installation-scripts install/install.sh --instance-type <instance-type> --volume-size <volume-size>
 ```
 
-**Note**: Remember to manually change the image id and security group id at the `dqn_example/dqn_autoscaler.yaml` after this command line"""
+**Note**: Remember to manually change the image id and security group id at the `dqn_example/dqn_autoscaler.yaml` after this command line
 
 ```bash
 # Initialize the cluster
