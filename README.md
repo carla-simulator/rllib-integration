@@ -2,17 +2,39 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla), allowing the easy use of the CARLA environment for training and inference purposes.
+RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla). This repository handles the creation and use of the CARLA simulator as an environment of RAY, which the users can use for training and inference purposes. This is complemented by an example, as well as some files to easy the use of AWS instances. These functionalities are divided in the following way:
 
-## Project Organization
+* **rllib_integration** contains all the infrastructure related to CARLA. Here, we set up the CARLA server, clients and actors. Also, the basic structure that all training and testing experiments must follow is included here.
 
-This repository is organized as follows:
+<!-- Additionally, if you want to create your own pseudo-sensor, check out **sensors/birdview_manager.py**, which is a simplified version of [CARLA's no rendering mode](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/no_rendering_mode.py). -->
 
-* **rllib_integration** contains all the infrastructure used to set up the CARLA server, clients and the training and testing experiments. Additionally, if you want to create your own pseudo-sensor, check out **sensors/birdview_manager.py**, which is a simplified version of [CARLA's no rendering mode](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/no_rendering_mode.py).
+* **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data.
 
-* **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data. Check the next section to show how to use it
+* **dqn_example**, as well as all the others **dqn_*** files, provide an easy-to-understand example on how to set up a RAY experiment using CARLA as its environment.
 
-* **dqn_example**, as well as all the others **dqn_*** files, provide an easy-to-understand example on how to use the tools available at the previously explained folder.
+
+
+
+
+## Creating your own experiment
+
+Let's start by explaining how to create your own experiment. To do so, you'll need to create a t least three files. These are the experiment class, the training file and the configuration of the environment. While this section focuses on a general overview, the next one exaplins an specific example, so make sure to check both of them for a better understanding.
+
+### Create the experiment class
+
+The first step that you need to do to use the CARLA environment is to define a training experiment. For all environments to work with RAY, they have to return a series of specific information (see [**CarlaEnv**](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_env.py)), which will be dependent on your specific experiment. As such, all experiments should inherit from [**BaseExperiment**](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L39), where all the functions that need to be overwritten are located. These are all functions related to the actions, observations and rewards of the training experiment.
+
+### Configure the environment 
+
+Apart your experiment, a configuration file is also required. Any settings here update the default ones. Its purpose is threefold. Firstly, you can set up most of the CARLA server and client settings directly from this file (see the default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_core.py#L23)). Secondly, and similarly to the previous point, your experiment also has a default configuration (see [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L12)), which handles the spawning of the ego vehicle and its sensors, as well as the town conditions. These can be set up either at your experiment class or directly at this file. Any other specific variables of your experiment can also be set up at the here. Lastly, any specific RAY settings related to the training can also be set up here.
+
+### Create the training file
+
+The last step is to create your own training file. This part is complete up to the user and is dependent on the RAY API.
+
+
+
+
 
 ## Running the repository locally
 
@@ -33,6 +55,10 @@ With CARLA installed, we can install the rest of the prerequisites with:
 With all the setup complete, the only step missing is to run the training script:
 
 `python3 <training_file> <training_config>`
+
+
+
+
 
 ## Running on AWS
 
@@ -85,15 +111,17 @@ watch -n 1 ray status
 ray down <autoscaler_configuration_file>
 ```
 
+
+
 ## DQN example
 
-This next section dives deeper into all the files used by the DQN example. For this example, Ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285) is used, and both training and inference, are showcased. The files are as follows:
+Setting aside the core files, this repository also contains an example to help you understand how to use this integration. This next section dives deeper into all the files used by the example, which uses Ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285).
 
-* **dqn_train.py** is the entry to the training. It has one compulsory argument, which should be the path to the experiment configuration. Here, the configuration is parsed and given to Ray, along with the experiment and CARLA environment classes.
-* **dqn_example/dqn_config.yaml** is a yaml configuration file. This should be the argument given to the _dqn_train.py_ file. Both the experiment and CARLA settings, as well as the Ray ones can be changed from here. These will be updated on top of the default ones.
-* **dqn_inference.py** is the script used to start an inference. For this example, one argument is needed, the path to a PyTorch checkpoint. 
-* **dqn_inference_ray.py** holds the same functionality as the previous inference file but in this case, it is done using the Ray library. As with the previous file, it also requires a checkpoint file, which should be automatically be created by the trainer.
-* At **dqn_example/dqn_experiment.py**, the experiment class is created, with all the information regarding the action space, observation space, actions and rewards needed for the DQN. It is recommended that all experiments inherit from `BaseExperiment`, at **rllib_integration/base_experiment.py**.
+As previously explained, the first step is to create the experiment class. This can be found at [**dqn_example/dqn_experiment.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_example/dqn_experiment.py). As a general overview, it uses a discrete action space with a length of 28 actions, and the observations sent to RAY are postprocessed images created by the [BirdView Pseudosensor](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/sensors/bird_view_manager.py).
+
+Regarding the configuration, it is located at [**dqn_example/dqn_config.yaml**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_example/dqn_config.yaml). The first set of settings are related to the DQNTrainer, followed by the CARLA environment and the experiment ones. Focus of the latter, the training blueprint of the ego vehicle is fixed to the Lincoln MKZ2017, and we tell CARLA to create the 'birdview' sensor. By default, the ego vehicle is spawned randomly throughout the map but if one or more spawn points are set, it chooses randomly between those. There are also additional settings such as the experiment town, or the amount of background activity roaming the city.
+
+For the training, the [**dqn_train.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_train.py) is used. Here, we use RAY [tune.run](https://docs.ray.io/en/latest/tune/api_docs/execution.html) to run the trainer and periodically save some checkpoints. Additionally, there are two files that, using the aforementioned checkpoints allow you to use inference on the model ([**dqn_inference.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_inference_ray.py) uses RAY's API while [**dqn_inference.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_inference.py) doesn't)
 
 With its structure explain, the next sections will be used to showcase how to run this specific example.
 
