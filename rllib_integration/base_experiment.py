@@ -12,13 +12,15 @@ from rllib_integration.helper import join_dicts
 BASE_EXPERIMENT_CONFIG = {
     "hero": {
         "blueprint": "vehicle.lincoln.mkz2017",
-        "sensors": {
+        "sensors": {  # Go to sensors/factory.py to check all the available sensors
             # "sensor_name1": {
-            #     "attribute1": attribute_value1
+            #     "type": blueprint,
+            #     "attribute1": attribute_value1,
             #     "attribute2": attribute_value2
             # }
             # "sensor_name2": {
-            #     "attribute_name1": attribute_value1
+            #     "type": blueprint,
+            #     "attribute_name1": attribute_value1,
             #     "attribute_name2": attribute_value2
             # }
         },

@@ -18,7 +18,7 @@ RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-
 
 ## Creating your own experiment
 
-Let's start by explaining how to create your own experiment. To do so, you'll need to create a t least three files. These are the experiment class, the training file and the configuration of the environment. While this section focuses on a general overview, the next one exaplins an specific example, so make sure to check both of them for a better understanding.
+Let's start by explaining how to create your own experiment. To do so, you'll need to create at least three files. These are the experiment class, the training file and the configuration of the environment. While this section focuses on a general overview of what you need to so, the next one explains an specific example, so make sure to check both of them for a better understanding.
 
 ### Create the experiment class
 
@@ -26,11 +26,11 @@ The first step that you need to do to use the CARLA environment is to define a t
 
 ### Configure the environment 
 
-Apart your experiment, a configuration file is also required. Any settings here update the default ones. Its purpose is threefold. Firstly, you can set up most of the CARLA server and client settings directly from this file (see the default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_core.py#L23)). Secondly, and similarly to the previous point, your experiment also has a default configuration (see [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L12)), which handles the spawning of the ego vehicle and its sensors, as well as the town conditions. These can be set up either at your experiment class or directly at this file. Any other specific variables of your experiment can also be set up at the here. Lastly, any specific RAY settings related to the training can also be set up here.
+Apart your experiment, a configuration file is also required. Any settings here update the default ones. Its purpose is threefold. Firstly, you can set up most of the CARLA server and client settings directly from this file (see the default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_core.py#L23)). Secondly, and similarly to the previous point, your experiment also has a default configuration (see [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L12)), which handles the spawning of the ego vehicle and its sensors (check the default settings for how to specificy the sensors to use), as well as the town conditions. Any other specific variables of your experiment can also be placed here. The rest of the settings are related to RAY's training.
 
 ### Create the training file
 
-The last step is to create your own training file. This part is complete up to the user and is dependent on the RAY API.
+The last step is to create your own training file. This part is completely up to the user and is dependent on the RAY API.
 
 
 
@@ -115,7 +115,9 @@ ray down <autoscaler_configuration_file>
 
 ## DQN example
 
-Setting aside the core files, this repository also contains an example to help you understand how to use this integration. This next section dives deeper into all the files used by the example, which uses Ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285).
+Due to the verstaility of both CARLA and RAY, we also provide an example on how to use this integration, which will help solidify what we talked about at the previous section, diving deeper into all the files used by the example. This example is based on RAY's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285).
+
+### Creation of the experiment
 
 As previously explained, the first step is to create the experiment class. This can be found at [**dqn_example/dqn_experiment.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_example/dqn_experiment.py). As a general overview, it uses a discrete action space with a length of 28 actions, and the observations sent to RAY are postprocessed images created by the [BirdView Pseudosensor](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/sensors/bird_view_manager.py).
 
