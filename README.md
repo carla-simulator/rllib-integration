@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla). This repository handles the creation and use of the CARLA simulator as an environment of Ray, which the users can use for training and inference purposes. This is complemented by an example, as well as some files to easy the use of AWS instances. These functionalities are divided in the following way:
+RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla). This repository handles the creation and use of the CARLA simulator as an environment of Ray, which the users can use for training and inference purposes. This is complemented by an example, as well as some files to ease the use of AWS instances. These functionalities are divided in the following way:
 
 * **rllib_integration** contains all the infrastructure related to CARLA. Here, we set up the CARLA server, clients and actors. Also, the basic structure that all training and testing experiments must follow is included here.
 
@@ -40,13 +40,12 @@ The first step that you need to do is to define a training experiment. For all e
 
 Additionally, a configuration file is also required. Any settings here update the default ones. It can be divided in three parts:
 
-- **Ray training**: everything related to the specific training used.
-- **CARLA environment** (default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_core.py#L23)): such as timeout or map quality.
-- **Experiment** (default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L12)): related to the ego vehicle and its sensors (check default settings for how to specificy the sensors to use), as well as the town conditions.
+- **Ray trainer configuration**: everything related to the specific trainer used. If you are using a built-in model, you can set up its settings here.
+- **CARLA environment**: CARLA related settings. These can be divided into the simulation, such as timeout or map quality (default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_core.py#L23)); and the experiment configuration, related to the ego vehicle and its sensors (check default settings for how to specificy the sensors to use), as well as the town conditions (default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L12)).
 
 ### Create the training and inference files
 
-The last step is to create your own training file and inference files. This part is completely up to the user and is dependent on the Ray API.
+The last step is to create your own training and inference files. This part is completely up to you and is dependent on the Ray API. Remember to check [Ray's custom model docs](https://docs.ray.io/en/master/rllib-models.html#custom-models-implementing-your-own-forward-logic), if you want to create your own specific model.
 
 
 ## DQN example
@@ -66,7 +65,7 @@ and run the training file
 python3 dqn_train.py dqn_example/dqn_config.yaml --name dqn
 ```
 
-**Note:** The default configuration uses 1 GPU and 12 CPUs, so if your current instance doesn't have that amount of capacity, lower the numbers at the `dqn_example/dqn_config.yaml`.
+**Note:** The default configuration uses 1 GPU and 12 CPUs, so if your current instance doesn't have that amount of capacity, lower the numbers at the `dqn_example/dqn_config.yaml`. Additionally, if you are having out of memory problems, consider reducing the `buffer_size` parameter.
 
 
 ## Running on AWS
