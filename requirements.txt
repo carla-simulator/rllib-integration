@@ -1,11 +1,10 @@
-pygame==2.0.1
 ray[rllib]==1.1.0
 PyYAML==5.4.1
-tensorboard==2.4.1
-# Instance prerequisites
 paramiko==2.7.2
 scp==0.13.3
 boto3==1.17.9
-
+# Local prerequisites
+pygame==2.0.1
+tensorboard==2.4.1
 
 
