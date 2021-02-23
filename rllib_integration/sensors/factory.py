@@ -43,7 +43,7 @@ class SensorFactory(object):
             sensor = Collision(name, attributes, interface, parent)
         elif type_ == "sensor.other.obstacle":
             sensor = Obstacle(name, attributes, interface, parent)
-        elif type_ == "sensor.birdview":
+        elif type_ == "sensor.birdview":  # Pseudosensor
             sensor = BirdviewManager(name, attributes, interface, parent)
         else:
             raise RuntimeError("Sensor of type {} not supported".format(type_))
