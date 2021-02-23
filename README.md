@@ -2,13 +2,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla). This repository handles the creation and use of the CARLA simulator as an environment of RAY, which the users can use for training and inference purposes. This is complemented by an example, as well as some files to easy the use of AWS instances. These functionalities are divided in the following way:
+RLlib integration brings support between the [Ray/RLlib](https://github.com/ray-project/ray) library and the [CARLA simulator](https://github.com/carla-simulator/carla). This repository handles the creation and use of the CARLA simulator as an environment of Ray, which the users can use for training and inference purposes. This is complemented by an example, as well as some files to easy the use of AWS instances. These functionalities are divided in the following way:
 
 * **rllib_integration** contains all the infrastructure related to CARLA. Here, we set up the CARLA server, clients and actors. Also, the basic structure that all training and testing experiments must follow is included here.
 
 * **aws** has the files needed to run this in an AWS instance. Specifically, the **aws_helper.py** provides several functionalities that ease the management of the EC2 instances, including their creation as well as retrieving and sending data.
 
-* **dqn_example**, as well as all the others **dqn_*** files, provide an easy-to-understand example on how to set up a RAY experiment using CARLA as its environment.
+* **dqn_example**, as well as all the others **dqn_*** files, provide an easy-to-understand example on how to set up a Ray experiment using CARLA as its environment.
 
 ## Setting up CARLA and dependencies
 
@@ -34,28 +34,28 @@ Let's start by explaining how to create your own experiment. To do so, you'll ne
 
 ### Create the experiment class
 
-The first step that you need to do is to define a training experiment. For all environments to work with RAY, they have to return specific information (see [**CarlaEnv**](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_env.py)), which will be dependent on your specific experiment. As such, all experiments should inherit from [**BaseExperiment**](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L39), overwritting all of its functions.
+The first step that you need to do is to define a training experiment. For all environments to work with Ray, they have to return specific information (see [**CarlaEnv**](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_env.py)), which will be dependent on your chosen experiment. As such, all experiments should inherit from [**BaseExperiment**](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L39), overwritting all of its methods.
 
 ### Configure the environment 
 
 Additionally, a configuration file is also required. Any settings here update the default ones. It can be divided in three parts:
 
-- **RAYs training**: everything related to the specific training used.
+- **Ray training**: everything related to the specific training used.
 - **CARLA environment** (default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/carla_core.py#L23)): such as timeout or map quality.
 - **Experiment** (default values [here](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/base_experiment.py#L12)): related to the ego vehicle and its sensors (check default settings for how to specificy the sensors to use), as well as the town conditions.
 
 ### Create the training and inference files
 
-The last step is to create your own training file and inference files. This part is completely up to the user and is dependent on the RAY API.
+The last step is to create your own training file and inference files. This part is completely up to the user and is dependent on the Ray API.
 
 
 ## DQN example
 
-To solidify the previous section, we also provide a simple example. It uses the [BirdView pseudosensor](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/sensors/bird_view_manager.py), along with RAY's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285). The files are:
+To solidify the previous section, we also provide a simple example. It uses the [BirdView pseudosensor](https://github.com/carla-simulator/rllib-integration/blob/main/rllib_integration/sensors/bird_view_manager.py), along with Ray's [DQNTrainer](https://github.com/ray-project/ray/blob/master/rllib/agents/dqn/dqn.py#L285). The files are:
 
-- The [**DQNExperiment**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_example/dqn_experiment.py#L19) is the experiment class, which overwrites the functions of its parent class.
+- The [**DQNExperiment**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_example/dqn_experiment.py#L19) is the experiment class, which overwrites the methods of its parent class.
 - The configuration file is [**dqn_example/dqn_config.yaml**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_example/dqn_config.yaml).
-- [**dqn_train.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_train.py) is responsible for the training, [**dqn_inference_ray.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_inference_ray.py) of the inference using RAY's API, and [**dqn_inference.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_inference.py), of the inference without it.
+- [**dqn_train.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_train.py) is responsible for the training, [**dqn_inference_ray.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_inference_ray.py) of the inference using Ray's API, and [**dqn_inference.py**](https://github.com/carla-simulator/rllib-integration/blob/main/dqn_inference.py), of the inference without it.
 
 To run this example locally, you need to install pytorch
 ```bash 
@@ -75,7 +75,7 @@ Additionally, we also provide tools to automatically run the training on EC2 ins
 
 ### Configure AWS
 
-Firstly, configure your boto3 environment correctly. You can follow the instructions [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html)
+Firstly, configure your boto3 environment correctly. You can follow the instructions [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html).
 
 ### Creating the training AMI
 
