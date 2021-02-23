@@ -8,117 +8,46 @@
 """DQN Algorithm. Tested with CARLA.
 You can visualize experiment results in ~/ray_results using TensorBoard.
 """
-
 from __future__ import print_function
 
-import sys
 import argparse
 import os
-import shutil
 import yaml
 
 import ray
 from ray import tune
-from ray.rllib.agents.callbacks import DefaultCallbacks
-from ray.rllib.agents.dqn import DQNTrainer
-
-import torch
-import numpy as np
-from tensorboard import program
 
 from rllib_integration.carla_env import CarlaEnv
 from rllib_integration.carla_core import kill_all_servers
 
+from rllib_integration.helper import get_checkpoint, launch_tensorboard
+
 from dqn_example.dqn_experiment import DQNExperiment
+from dqn_example.dqn_callbacks import DQNCallbacks
+from dqn_example.dqn_trainer import CustomDQNTrainer
 
 # Set the experiment to EXPERIMENT_CLASS so that it is passed to the configuration
 EXPERIMENT_CLASS = DQNExperiment
 
 
-class DQNCallbacks(DefaultCallbacks):
+def run(args):
+    try:
+        ray.init(address= "auto" if args.auto else None)
+        tune.run(CustomDQNTrainer,
+                 name=args.name,
+                 local_dir=args.directory,
+                 stop={"perf/ram_util_percent": 85.0},
+                 checkpoint_freq=1,
+                 checkpoint_at_end=True,
+                 restore=get_checkpoint(args.name, args.directory,
+                                        args.restore, args.overwrite),
+                 config=args.config,
+                 queue_trials=True)
 
-    def on_episode_start(self, worker, base_env, policies, episode, **kwargs):
-        episode.user_data["heading_deviation"] = []
+    finally:
+        kill_all_servers()
+        ray.shutdown()
 
-    def on_episode_step(self, worker, base_env, episode, **kwargs):
-        heading_deviation = worker.env.experiment.last_heading_deviation
-        if heading_deviation > 0:
-            episode.user_data["heading_deviation"].append(heading_deviation)
-
-    def on_episode_end(self, worker, base_env, policies, episode, **kwargs):
-        heading_deviation = episode.user_data["heading_deviation"]
-        if len(heading_deviation) > 0:
-            heading_deviation = np.mean(episode.user_data["heading_deviation"])
-        else:
-            heading_deviation = 0
-        episode.custom_metrics["heading_deviation"] = heading_deviation
-
-
-class CustomDQNTrainer(DQNTrainer):
-    """
-    Modified version of DQNTrainer with the added functionality of saving the torch model for later inference
-    """
-    def save_checkpoint(self, checkpoint_dir):
-        checkpoint_path = super().save_checkpoint(checkpoint_dir)
-
-        model = self.get_policy().model
-        torch.save(model.state_dict(), os.path.join(checkpoint_dir, "checkpoint_state_dict.pth"))
-
-        return checkpoint_path
-
-
-def find_latest_checkpoint(args):
-    """
-    Finds the latest checkpoint, based on how RLLib creates and names them.
-    """
-
-    start = args.training_directory
-    max_checkpoint_int = -1
-    checkpoint_path = ""
-
-    # 1st layer: Check for the different run folders
-    for f in os.listdir(start):
-        if os.path.isdir(start + "/" + f):
-            temp = start + "/" + f
-
-            # 2nd layer: Check all the checkpoint folders
-            for c in os.listdir(temp):
-                if "checkpoint_" in c:
-
-                    # 3rd layer: Get the most recent checkpoint
-                    checkpoint_int = int(''.join([n for n in c if n.isdigit()]))
-                    if checkpoint_int > max_checkpoint_int:
-                        max_checkpoint_int = checkpoint_int
-                        checkpoint_path = temp + "/" + c + "/" + c.replace("_", "-")
-
-    if not checkpoint_path:
-        raise FileNotFoundError("Could not find any checkpoint, make sure that you have selected the correct folder path")
-
-    return checkpoint_path
-
-def manage_training_directory(args):
-    """
-    Depending of the arguments, makes sure that the directory is correctly setup
-    """
-    training_directory = args.directory + "/" + args.name
-
-    if not args.restore:
-        if os.path.exists(training_directory):
-            if args.overwrite and os.path.isdir(training_directory):
-                print("Removing all contents inside '" + training_directory + "'")
-                shutil.rmtree(training_directory)
-            elif len(os.listdir(training_directory)) != 0:
-                print("The directory where you are trying to train (" + training_directory + ") is not empty. "
-                      "To start a new training instance, make sure this folder is either empty, non-existing "
-                      "or use the '--overwrite' argument to remove all the contents inside")
-                sys.exit(-1)
-    else:
-        if not(os.path.exists(training_directory)) or len(os.listdir(training_directory)) == 0:
-            print("You can't restore from an empty or non-existing directory. "
-                  "To restore a training instance, make sure there is at least one checkpoint.")
-            sys.exit(-1)
-
-    return training_directory
 
 def parse_config(args):
     """
@@ -131,36 +60,6 @@ def parse_config(args):
         config["callbacks"] = DQNCallbacks
 
     return config
-
-def run(args):
-    try:
-        checkpoint = False
-        if args.restore:
-            checkpoint = find_latest_checkpoint(args)
-        if not args.tboff:
-            tb = program.TensorBoard()
-            argv = [None, '--logdir', args.directory + "/" + args.name] 
-            if args.auto:
-                argv.extend(["--host", "0.0.0.0"])
-            tb.configure(argv=argv)
-            url = tb.launch()
-        kill_all_servers()
-        ray.init(address= "auto" if args.auto else None)
-        tune.run(
-            CustomDQNTrainer,
-            name=args.name,
-            local_dir=args.directory,
-            stop={"perf/ram_util_percent": 85.0},
-            checkpoint_freq=1,
-            checkpoint_at_end=True,
-            restore=checkpoint,
-            config=args.config,
-            queue_trials=True
-        )
-
-    finally:
-        kill_all_servers()
-        ray.shutdown()
 
 
 def main():
@@ -194,8 +93,12 @@ def main():
 
 
     args = argparser.parse_args()
-    args.training_directory = manage_training_directory(args)
     args.config = parse_config(args)
+
+    if not args.tboff:
+        launch_tensorboard(logdir=os.path.join(args.directory, args.name),
+                           host="0.0.0.0" if args.auto else "localhost")
+
     run(args)
 
 
