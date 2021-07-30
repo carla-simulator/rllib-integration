@@ -113,7 +113,11 @@ class MapImage(object):
         opendrive_hash = str(hash_func.hexdigest())
 
         # Build path for saving or loading the cached rendered map
-        filename = carla_map.name + "_" + opendrive_hash + ".tga"
+        try:
+            map_name = carla_map.name.split("/")[-1]
+        except Exception:
+            map_name = carla_map.name
+        filename = map_name + "_" + opendrive_hash + ".tga"
         self.dirname = "map_cache"
         self.full_path = str(os.path.join(self.dirname, filename))
 
