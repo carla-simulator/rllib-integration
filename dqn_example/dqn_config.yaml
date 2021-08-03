@@ -51,7 +51,7 @@ env_config:
 
   experiment:
     hero:
-      blueprint: "vehicle.lincoln.mkz2017"
+      blueprint: "vehicle.lincoln.mkz_2017"
       sensors:
         birdview:
           type: "sensor.birdview"
