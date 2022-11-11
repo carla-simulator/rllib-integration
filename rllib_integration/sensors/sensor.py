@@ -165,9 +165,10 @@ class SemanticLidar(CarlaSensor):
     def parse(self, sensor_data):
         """Parses the SemanticLidarMeasurememt into an numpy array"""
         # sensor_data: [x, y, z, cos(angle), actor index, semantic tag]
-        points = np.frombuffer(sensor_data.raw_data, dtype=np.dtype('f4'))
+        points = np.frombuffer(sensor_data.raw_data, dtype=np.dtype([
+            ('x', np.float32), ('y', np.float32), ('z', np.float32),
+            ('CosAngle', np.float32), ('ObjIdx', np.uint32), ('ObjTag', np.uint32)]))
         points = copy.deepcopy(points)
-        points = np.reshape(points, (int(points.shape[0] / 6), 6))
         return points
 
 
